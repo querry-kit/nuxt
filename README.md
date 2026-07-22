@@ -28,7 +28,7 @@ The [Querry Kit overview](https://querry-kit.github.io/querry-kit/) connects the
 - [`@querry-kit/nuxt`](https://github.com/querry-kit/nuxt) for typed API clients and headless Vue/Nuxt data primitives.
 - [`@querry-kit/nuxt-ui`](https://github.com/querry-kit/nuxt-ui) for Nuxt UI integrations built on these primitives.
 
-It will also contain the complete API-and-webapp example that shows the packages working together end to end.
+It also contains the complete Workboard API-and-web-app example, which shows the packages working together end to end.
 
 ## 📚 Table of Contents <!-- omit in toc -->
 

@@ -23,10 +23,25 @@
 
 - Aim for 100% runtime line coverage; exclude only type-only and generated modules, never executable runtime code.
 - For code changes, run `pnpm lint`, `pnpm check`, `pnpm build`, and `pnpm test:coverage`.
-- For package export changes, verify the built ESM and CommonJS entrypoints. For example, docs, or workflow changes, also run the corresponding package scripts or validate equivalent commands.
+- For documentation changes, run `pnpm docs:build`; for example or workflow changes, run the corresponding package scripts or validate equivalent commands.
+- For package export changes, verify the built ESM and CommonJS entrypoints.
+- If a verification command cannot be run, report that explicitly.
 
-## Documentation and Releases
+## Git Workflow
+
+- Keep commits scoped and intentional.
+- Do not push without explicit user authorization.
+- Check `git status --short --branch` before committing or pushing.
+- When pushing a feature branch, open a draft pull request against the default branch and assign `@tobiaswaelde`.
+
+## Release Workflow
+
+- Develop on feature branches or `dev`, not directly on `main`.
+- Changesets creates or updates release pull requests for versioning and changelog updates.
+- Publishing uses the repository's npm Trusted Publishing workflow; do not publish manually unless explicitly requested.
+
+## Documentation
 
 - Keep the English README and VitePress documentation aligned with public APIs, examples, installation, and release workflow.
+- Keep navigation, sidebar entries, and linked pages in sync for VitePress changes.
 - Docs examples must use the published `@querry-kit/nuxt` package name and remain practical.
-- Changesets manages version pull requests. Publishing uses the repository's npm Trusted Publishing workflow; do not publish manually unless explicitly requested.
