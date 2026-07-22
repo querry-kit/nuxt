@@ -1,0 +1,32 @@
+{
+  "trailingComma": "all",
+  "semi": true,
+  "endOfLine": "auto",
+  "printWidth": 120,
+  "singleQuote": true,
+  "vueIndentScriptAndStyle": true,
+  "plugins": ["prettier-plugin-organize-imports"],
+  "overrides": [
+    {
+      "files": "*.vue",
+      "options": {
+        "singleQuote": true,
+        "vueIndentScriptAndStyle": false,
+        "parser": "vue"
+      }
+    },
+    {
+      "files": "*.html",
+      "options": {
+        "singleQuote": false
+      }
+    },
+    {
+      "files": "*.ts",
+      "options": {
+        "singleQuote": true,
+        "parser": "typescript"
+      }
+    }
+  ]
+}

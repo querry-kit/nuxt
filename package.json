@@ -1,0 +1,134 @@
+{
+  "name": "@querry-kit/nuxt",
+  "version": "0.0.1",
+  "description": "Framework-agnostic Vue and Nuxt composables for Query Kit APIs, tables, and autocompletes.",
+  "keywords": [
+    "nuxt",
+    "vue",
+    "query-kit",
+    "table",
+    "autocomplete",
+    "axios",
+    "typescript"
+  ],
+  "license": "MIT",
+  "homepage": "https://querry-kit.github.io/nuxt/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/querry-kit/nuxt.git"
+  },
+  "bugs": {
+    "url": "https://github.com/querry-kit/nuxt/issues"
+  },
+  "author": {
+    "name": "Tobias Waelde",
+    "email": "business@tobiaswaelde.com",
+    "url": "https://tobiaswaelde.com"
+  },
+  "private": false,
+  "publishConfig": {
+    "access": "public"
+  },
+  "type": "module",
+  "sideEffects": false,
+  "engines": {
+    "node": ">=24"
+  },
+  "packageManager": "pnpm@11.15.1",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs",
+      "default": "./dist/index.js"
+    },
+    "./api": {
+      "types": "./dist/api.d.ts",
+      "import": "./dist/api.js",
+      "require": "./dist/api.cjs",
+      "default": "./dist/api.js"
+    },
+    "./table": {
+      "types": "./dist/table.d.ts",
+      "import": "./dist/table.js",
+      "require": "./dist/table.cjs",
+      "default": "./dist/table.js"
+    },
+    "./autocomplete": {
+      "types": "./dist/autocomplete.d.ts",
+      "import": "./dist/autocomplete.js",
+      "require": "./dist/autocomplete.cjs",
+      "default": "./dist/autocomplete.js"
+    },
+    "./types": {
+      "types": "./dist/types.d.ts",
+      "import": "./dist/types.js",
+      "require": "./dist/types.cjs",
+      "default": "./dist/types.js"
+    },
+    "./utils": {
+      "types": "./dist/utils.d.ts",
+      "import": "./dist/utils.js",
+      "require": "./dist/utils.cjs",
+      "default": "./dist/utils.js"
+    }
+  },
+  "scripts": {
+    "dev": "tsc -p tsconfig.json --watch",
+    "check": "tsc -p tsconfig.json --noEmit",
+    "typecheck": "pnpm check",
+    "build": "tsup",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "test": "jest --config ./jest.config.cjs",
+    "test:coverage": "jest --config ./jest.config.cjs --coverage",
+    "test:watch": "jest --config ./jest.config.cjs --watch",
+    "examples:check": "pnpm --dir examples/nuxt exec nuxi typecheck",
+    "examples:build": "pnpm --dir examples/nuxt build",
+    "docs:dev": "pnpm --filter docs dev",
+    "docs:build": "pnpm --filter docs build",
+    "docs:preview": "pnpm --filter docs preview"
+  },
+  "peerDependencies": {
+    "@tanstack/table-core": "^8.21.3",
+    "@vueuse/core": "^14.3.0",
+    "@vueuse/router": "^14.3.0",
+    "vue": "^3.5.40",
+    "vue-router": "^5.2.0"
+  },
+  "dependencies": {
+    "axios": "^1.18.1",
+    "qs": "^6.15.3"
+  },
+  "devDependencies": {
+    "@changesets/cli": "^2.31.1",
+    "@jest/types": "^30.4.1",
+    "@tanstack/table-core": "^8.21.3",
+    "@types/jest": "^30.0.0",
+    "@types/node": "^26.1.1",
+    "@types/qs": "^6.15.1",
+    "@vueuse/core": "^14.3.0",
+    "@vueuse/router": "^14.3.0",
+    "eslint": "^10.7.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.6",
+    "eslint-plugin-vue": "^10.9.2",
+    "jest": "^30.4.2",
+    "prettier": "^3.9.5",
+    "prettier-plugin-organize-imports": "^4.3.0",
+    "ts-jest": "^29.4.11",
+    "tsup": "^8.5.1",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.64.0",
+    "vue": "^3.5.40",
+    "vue-eslint-parser": "^10.4.1",
+    "vue-tsc": "^3.3.7",
+    "vue-router": "^5.2.0"
+  }
+}

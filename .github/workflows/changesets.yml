@@ -1,0 +1,57 @@
+name: changesets
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: changesets-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+jobs:
+  version:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Create or update release PR
+        id: changesets
+        uses: changesets/action@v1
+        with:
+          version: pnpm changeset version
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+
+      - name: Assign Version Packages PR
+        if: steps.changesets.outputs.published != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_ASSIGNEE: tobiaswaelde
+        run: |
+          pr_number="$(gh pr list --repo "$GITHUB_REPOSITORY" --head "changeset-release/${GITHUB_REF_NAME}" --state open --json number --jq '.[0].number')"
+          if [ -z "$pr_number" ]; then
+            echo "No open Version Packages PR to assign."
+            exit 0
+          fi
+          gh pr edit "$pr_number" --repo "$GITHUB_REPOSITORY" --add-assignee "$PR_ASSIGNEE"
