@@ -7,6 +7,7 @@ import {
   pathsToFieldsQuery,
   serializeQuery,
   sortingToOrderBy,
+  unflatten,
 } from '../src/utils';
 
 describe('Query Kit utilities', () => {
@@ -51,7 +52,19 @@ describe('Query Kit utilities', () => {
       OR: [{ active: true }],
     });
     expect(sortingToOrderBy([{ id: 'profile.name', desc: false }])).toEqual([{ profile: { name: 'asc' } }]);
+    expect(sortingToOrderBy([{ id: 'profile.name', desc: true }])).toEqual([{ profile: { name: 'desc' } }]);
+    expect(sortingToOrderBy([])).toBeUndefined();
+    expect(filteringToWhere({ operator: 'AND', filters: [{ id: '1', field: 'active', value: true }] })).toEqual({
+      active: true,
+    });
+    expect(filteringToWhere({ operator: 'AND', filters: [{ id: '1', field: 'inactive' }] })).toBeUndefined();
     expect(andWhere({ active: true }, { tenantId: 'one' })).toEqual({ AND: [{ active: true }, { tenantId: 'one' }] });
+    expect(andWhere({ active: true })).toEqual({ active: true });
+    expect(andWhere()).toBeUndefined();
+  });
+
+  it('expands only usable paths and replaces conflicting intermediate values', () => {
+    expect(unflatten({ '': 'ignored', profile: 'old', 'profile.name': 'Ada' })).toEqual({ profile: { name: 'Ada' } });
   });
 
   it('merges nested autocomplete query fragments', () => {
@@ -64,11 +77,13 @@ describe('Query Kit utilities', () => {
   });
 
   it('handles invalid persisted JSON and structural equality edge cases', () => {
+    expect(parseJson(null, ['fallback'])).toEqual(['fallback']);
     expect(parseJson('{not json', ['fallback'])).toEqual(['fallback']);
     expect(parseJson('["saved"]', [])).toEqual(['saved']);
     expect(isEqual({ a: [1, { two: true }] }, { a: [1, { two: true }] })).toBe(true);
     expect(isEqual({ a: 1 }, { a: 2 })).toBe(false);
     expect(isEqual([1], [1, 2])).toBe(false);
+    expect(isEqual([1], { 0: 1 })).toBe(false);
     expect(isEqual(null, {})).toBe(false);
     expect(mergeQuery({ value: ['old'] }, { value: ['new'] })).toEqual({ value: ['new'] });
   });

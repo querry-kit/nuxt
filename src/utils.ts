@@ -2,12 +2,22 @@ import qs from 'qs';
 
 import type { FilteringState, QueryParameters, SortingRule } from './types';
 
-/** Serializes a Query Kit request with the same bracket notation used by Nest resource endpoints. */
+/**
+ * Serializes a Query Kit request with the same bracket notation used by Nest resource endpoints.
+ *
+ * @param query - Query Kit query payload.
+ * @returns A leading-question-mark query string, or an empty string for an empty payload.
+ */
 export function serializeQuery(query: QueryParameters = {}): string {
   return qs.stringify(query, { addQueryPrefix: true, encodeValuesOnly: true });
 }
 
-/** Builds the compact Query Kit fields grammar from dot-separated field paths. */
+/**
+ * Builds the compact Query Kit fields grammar from dot-separated field paths.
+ *
+ * @param paths - Field paths such as `id` and `author.name`.
+ * @returns The compact fields string, or `undefined` when no usable path is supplied.
+ */
 export function pathsToFieldsQuery(paths: Iterable<string>): string | undefined {
   interface Tree {
     [key: string]: Tree | true;
@@ -40,7 +50,12 @@ export function pathsToFieldsQuery(paths: Iterable<string>): string | undefined 
   return result || undefined;
 }
 
-/** Expands dotted object keys into the nested shape expected by Query Kit. */
+/**
+ * Expands dotted object keys into the nested shape expected by Query Kit.
+ *
+ * @param value - Flat mapping such as `{ 'author.name': 'asc' }`.
+ * @returns The equivalent nested object.
+ */
 export function unflatten(value: Record<string, unknown>): Record<string, unknown> {
   const result: Record<string, unknown> = {};
   for (const [path, item] of Object.entries(value)) {
@@ -60,13 +75,23 @@ export function unflatten(value: Record<string, unknown>): Record<string, unknow
   return result;
 }
 
-/** Converts table sorting state to Query Kit's nested `orderBy` payload. */
+/**
+ * Converts table sorting state to Query Kit's nested `orderBy` payload.
+ *
+ * @param sorting - Ordered UI sorting rules.
+ * @returns A Query Kit order-by array, or `undefined` when no rule is active.
+ */
 export function sortingToOrderBy(sorting: readonly SortingRule[]): Record<string, unknown>[] | undefined {
   if (sorting.length === 0) return undefined;
   return sorting.map(({ id, desc }) => unflatten({ [id]: desc ? 'desc' : 'asc' }));
 }
 
-/** Converts UI filtering state to a Query Kit `where` payload. */
+/**
+ * Converts UI filtering state to a Query Kit `where` payload.
+ *
+ * @param filtering - User-controlled filtering rules and their `AND`/`OR` operator.
+ * @returns A nested Query Kit where expression, or `undefined` when no filter has a value.
+ */
 export function filteringToWhere(filtering: FilteringState): Record<string, unknown> | undefined {
   const conditions = filtering.filters
     .filter((filter) => filter.value !== undefined)
@@ -83,7 +108,12 @@ export function filteringToWhere(filtering: FilteringState): Record<string, unkn
       : { AND: conditions };
 }
 
-/** Combines non-empty Query Kit conditions with an `AND` expression. */
+/**
+ * Combines non-empty Query Kit conditions with an `AND` expression.
+ *
+ * @param conditions - Optional where fragments.
+ * @returns One fragment unchanged, multiple fragments in an `AND`, or `undefined` for none.
+ */
 export function andWhere(
   ...conditions: Array<Record<string, unknown> | undefined>
 ): Record<string, unknown> | undefined {
@@ -92,7 +122,14 @@ export function andWhere(
   return present.length === 1 ? present[0] : { AND: present };
 }
 
-/** Safe JSON decoding for persisted state and URL payloads. */
+/**
+ * Safely decodes JSON for persisted state and URL payloads.
+ *
+ * @typeParam T - Expected decoded value type.
+ * @param value - Serialized JSON or an absent storage value.
+ * @param fallback - Value returned for absent or invalid JSON.
+ * @returns Decoded JSON or the fallback.
+ */
 export function parseJson<T>(value: string | null | undefined, fallback: T): T {
   if (!value) return fallback;
   try {
@@ -102,7 +139,13 @@ export function parseJson<T>(value: string | null | undefined, fallback: T): T {
   }
 }
 
-/** A small structural equality helper suitable for reactive query values. */
+/**
+ * Compares plain object and array values structurally for reactive query watchers.
+ *
+ * @param left - First value.
+ * @param right - Second value.
+ * @returns Whether both values have the same recursive structure and scalar values.
+ */
 export function isEqual(left: unknown, right: unknown): boolean {
   if (Object.is(left, right)) return true;
   if (!left || !right || typeof left !== 'object' || typeof right !== 'object') return false;
@@ -122,7 +165,14 @@ export function isEqual(left: unknown, right: unknown): boolean {
   );
 }
 
-/** Deeply merges object query fragments; later scalar values replace earlier values. */
+/**
+ * Deeply merges object query fragments; later scalar values replace earlier values.
+ *
+ * @typeParam T - Shape of the base query.
+ * @param base - Existing query fragment.
+ * @param extra - Fragment whose values take precedence.
+ * @returns The merged query, preserving nested object properties from both inputs.
+ */
 export function mergeQuery<T extends Record<string, unknown>>(base: T, extra: Record<string, unknown>): T {
   const result: Record<string, unknown> = { ...base };
   for (const [key, value] of Object.entries(extra)) {

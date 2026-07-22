@@ -18,6 +18,7 @@ export default defineConfig({
             { text: 'Getting started', link: '/guide/getting-started' },
             { text: 'Table', link: '/guide/table' },
             { text: 'Autocomplete', link: '/guide/autocomplete' },
+            { text: 'Query conventions', link: '/guide/query-conventions' },
             { text: 'Example app', link: '/guide/example-app' },
           ],
         },
@@ -27,6 +28,8 @@ export default defineConfig({
           text: 'API',
           items: [
             { text: 'Client and endpoints', link: '/api/client' },
+            { text: 'Table', link: '/api/table' },
+            { text: 'Autocomplete', link: '/api/autocomplete' },
             { text: 'Backend compatibility', link: '/api/query-kit' },
           ],
         },

@@ -10,7 +10,15 @@ type CreateFor<TMap extends EndpointMap, TEndpoint extends keyof TMap> =
 type UpdateFor<TMap extends EndpointMap, TEndpoint extends keyof TMap> =
   TMap[TEndpoint] extends EndpointDefinition<unknown, unknown, infer TUpdate> ? TUpdate : never;
 
-/** Provides typed Query Kit CRUD methods for one API endpoint. */
+/**
+ * Provides typed Query Kit CRUD methods for one API endpoint.
+ *
+ * @typeParam TMap - Map associating endpoint names with resource and mutation payload types.
+ * @typeParam TEndpoint - Key of the endpoint to expose.
+ * @param api - Axios instance targeting the Query Kit API version.
+ * @param endpoint - Endpoint name, with an optional leading slash.
+ * @returns Typed `query`, `get`, `findById`, `count`, `create`, `update`, and `delete` methods.
+ */
 export function useModuleApi<TMap extends EndpointMap, TEndpoint extends keyof TMap & string>(
   api: AxiosInstance,
   endpoint: TEndpoint,

@@ -164,6 +164,30 @@ describe('useTable', () => {
     if (originalStorage) Object.defineProperty(globalThis, 'localStorage', originalStorage);
     else Reflect.deleteProperty(globalThis, 'localStorage');
   });
+
+  it('uses default query state and invokes successful lifecycle callbacks', async () => {
+    const get = jest
+      .fn()
+      .mockResolvedValue({ data: { items: [{ id: '1', name: 'Ada' }], meta: { itemCount: 1, pageCount: 1 } } });
+    const onInitialized = jest.fn();
+    const onRefreshed = jest.fn();
+    const table = useTable<User>({
+      api: { get } as unknown as AxiosInstance,
+      endpoint: 'users',
+      persistenceKey: 'default-users',
+      columns: ref([{ id: 'name' }]),
+      storage: memoryStorage(),
+      onInitialized,
+      onRefreshed,
+    });
+
+    await table.initialize();
+    expect(table.page.value).toBe(1);
+    expect(table.queryParams.value.where).toBeUndefined();
+    expect(table.queryParams.value.orderBy).toBeUndefined();
+    expect(onRefreshed).toHaveBeenCalledWith([{ id: '1', name: 'Ada' }]);
+    expect(onInitialized).toHaveBeenCalledTimes(1);
+  });
 });
 
 describe('useAutocomplete', () => {
@@ -252,5 +276,18 @@ describe('useAutocomplete', () => {
     await Promise.resolve();
     expect(get).toHaveBeenCalledTimes(4);
     expect(autocomplete.items.value).toEqual([{ id: 'one', name: 'One' }]);
+  });
+
+  it('queries multiple selected identities with an `in` condition', async () => {
+    const get = jest.fn().mockResolvedValue({ data: { items: [], meta: { itemCount: 0, pageCount: 0 } } });
+    const autocomplete = useAutocomplete<{ id: string; name: string }>({
+      api: { get } as unknown as AxiosInstance,
+      endpoint: 'people',
+      currentValue: ref(['one', 'two']),
+      immediate: false,
+    });
+
+    await autocomplete.loadCurrentItems();
+    expect(get).toHaveBeenCalledWith(expect.stringContaining('where[id][in][0]=one&where[id][in][1]=two'));
   });
 });

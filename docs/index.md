@@ -1,6 +1,6 @@
 # Query Kit Nuxt
 
-Reusable Vue 3 and Nuxt building blocks for APIs implementing the Query Kit `ResourceQuery` contract.
+Reusable Vue 3 and Nuxt building blocks for APIs implementing the Query Kit `ResourceQuery` contract. The core is headless: it manages remote state and emits plain reactive values, while the application owns visual components and framework integrations.
 
 <div class="vp-doc">
 
@@ -8,4 +8,12 @@ Reusable Vue 3 and Nuxt building blocks for APIs implementing the Query Kit `Res
 
 </div>
 
-The package stays independent of Nuxt runtime configuration and application authentication. Give it an Axios instance and explicit endpoint types; it supplies typed remote-data primitives.
+## What belongs where
+
+| Package responsibility                                                 | Application responsibility                                     |
+| ---------------------------------------------------------------------- | -------------------------------------------------------------- |
+| Typed REST methods and Query Kit serialization                         | Nuxt runtime config and API origin                             |
+| Table/autocomplete fetching, stale-request protection, and local state | Authentication, stores, router adapters, and visual components |
+| Explicit storage and URL-page adapters                                 | Endpoint map and feature-specific permissions                  |
+
+Give the package an Axios instance and explicit endpoint types; it supplies portable remote-data primitives without hidden global dependencies.
