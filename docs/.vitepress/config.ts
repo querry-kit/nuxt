@@ -50,6 +50,7 @@ export default defineConfig({
     nav: [
       { text: 'Guide', link: '/guide/getting-started' },
       { text: 'API', link: '/api/' },
+      { text: 'Ecosystem', link: 'https://querry-kit.github.io/querry-kit/' },
     ],
     sidebar,
     socialLinks: [{ icon: 'github', link: repository }],

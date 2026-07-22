@@ -27,3 +27,27 @@
     rgba(249, 168, 212, 0.56)
   );
 }
+
+.VPHome .ecosystem-card {
+  margin: 0 auto 80px;
+  max-width: 1152px;
+  padding: 32px;
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 20px;
+  background: linear-gradient(135deg, var(--vp-c-brand-soft), transparent 65%);
+}
+
+.VPHome .ecosystem-card h2 {
+  margin: 0 0 12px;
+  border: 0;
+  font-size: 24px;
+}
+
+.VPHome .ecosystem-card p {
+  max-width: 760px;
+  margin: 0 0 20px;
+}
+
+.VPHome .ecosystem-card a {
+  font-weight: 600;
+}

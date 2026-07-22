@@ -39,3 +39,13 @@ features:
     link: /guide/controller-contract
     linkText: Read the contract
 ---
+
+<div class="ecosystem-card">
+
+<h2>Build the complete stack</h2>
+
+<p>The <a href="https://querry-kit.github.io/querry-kit/" target="_blank" rel="noreferrer">Querry Kit ecosystem</a> connects the <code>@querry-kit/nest</code>, <code>@querry-kit/nuxt</code>, and <code>@querry-kit/nuxt-ui</code> repositories. It is also the home for the growing end-to-end example: a Query Kit API and its Nuxt web application.</p>
+
+<a href="https://querry-kit.github.io/querry-kit/" target="_blank" rel="noreferrer">Explore the Querry Kit overview →</a>
+
+</div>
