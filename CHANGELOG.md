@@ -1,5 +1,11 @@
 # @querry-kit/nuxt
 
+## 0.0.5
+
+### Patch Changes
+
+- e0f6780: Standardize the English README and contributor guidance.
+
 ## 0.0.4
 
 ### Patch Changes
