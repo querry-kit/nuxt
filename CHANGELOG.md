@@ -1,5 +1,11 @@
 # @querry-kit/nuxt
 
+## 0.0.4
+
+### Patch Changes
+
+- dc05edd: Link the Nuxt documentation and README to the Querry Kit ecosystem overview.
+
 ## 0.0.3
 
 ### Patch Changes
