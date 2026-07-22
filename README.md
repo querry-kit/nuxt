@@ -116,6 +116,7 @@ The package stays independent of Nuxt runtime configuration, application authent
 ## 📖 Documentation
 
 - [Getting Started](https://querry-kit.github.io/nuxt/guide/getting-started)
+- [Controller Contract](https://querry-kit.github.io/nuxt/guide/controller-contract)
 - [Remote Tables](https://querry-kit.github.io/nuxt/guide/table)
 - [Autocomplete](https://querry-kit.github.io/nuxt/guide/autocomplete)
 - [Query conventions](https://querry-kit.github.io/nuxt/guide/query-conventions)

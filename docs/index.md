@@ -1,19 +1,41 @@
-# Query Kit Nuxt
-
-Reusable Vue 3 and Nuxt building blocks for APIs implementing the Query Kit `ResourceQuery` contract. The core is headless: it manages remote state and emits plain reactive values, while the application owns visual components and framework integrations.
-
-<div class="vp-doc">
-
-<a class="VPButton brand" href="/nuxt/guide/getting-started">Get started</a>
-
-</div>
-
-## What belongs where
-
-| Package responsibility                                                 | Application responsibility                                     |
-| ---------------------------------------------------------------------- | -------------------------------------------------------------- |
-| Typed REST methods and Query Kit serialization                         | Nuxt runtime config and API origin                             |
-| Table/autocomplete fetching, stale-request protection, and local state | Authentication, stores, router adapters, and visual components |
-| Explicit storage and URL-page adapters                                 | Endpoint map and feature-specific permissions                  |
-
-Give the package an Axios instance and explicit endpoint types; it supplies portable remote-data primitives without hidden global dependencies.
+---
+layout: home
+hero:
+  name: '@querry-kit/nuxt'
+  text: Query Kit for Vue and Nuxt
+  tagline: Typed API clients and portable remote state for Query Kit resource endpoints.
+  image:
+    src: /logo.svg
+    alt: '@querry-kit/nuxt logo'
+  actions:
+    - theme: brand
+      text: Getting Started
+      link: /guide/getting-started
+    - theme: alt
+      text: Controller Contract
+      link: /guide/controller-contract
+    - theme: alt
+      text: API Reference
+      link: /api/
+features:
+  - title: Typed resource API
+    icon: 🔌
+    details: Configure one Axios client, describe endpoint payloads once, and use typed list, detail, count, and mutation methods everywhere.
+    link: /api/client
+    linkText: Explore the client
+  - title: Headless remote tables
+    icon: 📊
+    details: Compose pagination, fields, filters, sorting, persistence, and stale-request protection without coupling to a UI library or router.
+    link: /guide/table
+    linkText: Build a table
+  - title: Selection-safe autocomplete
+    icon: ✨
+    details: Keep selected resources available while search queries change, then hand plain reactive options to the component library of your choice.
+    link: /guide/autocomplete
+    linkText: Add autocomplete
+  - title: Explicit backend contract
+    icon: 🧭
+    details: See the controller routes and Query Kit response shape required by the composables before connecting an application.
+    link: /guide/controller-contract
+    linkText: Read the contract
+---

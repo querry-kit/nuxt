@@ -43,3 +43,5 @@ await books.update('book-1', { title: 'New title' });
 ```
 
 `useModuleApi` exposes `query`, `get`, `findById`, `count`, `create`, `update`, and `delete`. Its endpoint argument accepts either `books` or `/books`; identifiers are URL encoded.
+
+Before integrating tables or autocompletes, verify that the backend exposes the required routes and `{ items, meta }` response shape in the [controller contract](/guide/controller-contract).
