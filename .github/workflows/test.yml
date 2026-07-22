@@ -33,6 +33,9 @@ jobs:
       - name: Run tests with coverage
         run: pnpm test:coverage
 
+      - name: Build package
+        run: pnpm build
+
       - name: Typecheck Nuxt example
         run: pnpm examples:check
 
