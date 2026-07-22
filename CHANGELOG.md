@@ -1,5 +1,11 @@
 # @querry-kit/nuxt
 
+## 0.0.3
+
+### Patch Changes
+
+- 245893b: Improve the documentation landing page, navigation, and backend controller contract guidance.
+
 ## 0.0.2
 
 ### Patch Changes
