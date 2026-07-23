@@ -1,1 +1,9 @@
-export * from '../utils';
+export { andWhere } from './and-where';
+export { filteringToWhere } from './filtering-to-where';
+export { isEqual } from './is-equal';
+export { mergeQuery } from './merge-query';
+export { parseJson } from './parse-json';
+export { pathsToFieldsQuery } from './paths-to-fields-query';
+export { serializeQuery } from './serialize-query';
+export { sortingToOrderBy } from './sorting-to-order-by';
+export { unflatten } from './unflatten';

@@ -3,7 +3,7 @@ import { nextTick, ref } from 'vue';
 
 import { useAutocomplete } from '../src/autocomplete';
 import { useTable } from '../src/table';
-import type { StorageLike, TableColumn } from '../src/types';
+import type { StorageLike, TableColumn, TableColumnInput } from '../src/types';
 
 type User = { id: string; name: string; owner?: { name: string }; isArchived?: boolean };
 
@@ -187,6 +187,23 @@ describe('useTable', () => {
     expect(table.queryParams.value.orderBy).toBeUndefined();
     expect(onRefreshed).toHaveBeenCalledWith([{ id: '1', name: 'Ada' }]);
     expect(onInitialized).toHaveBeenCalledTimes(1);
+  });
+
+  it('retains generic renderer metadata and ignores columns without an ID', async () => {
+    const get = jest
+      .fn()
+      .mockResolvedValue({ data: { items: [{ id: '1', name: 'Ada' }], meta: { itemCount: 1, pageCount: 1 } } });
+    const table = useTable<User, TableColumnInput<User, { header: string; accessorKey?: string }>>({
+      api: { get } as unknown as AxiosInstance,
+      endpoint: 'users',
+      persistenceKey: 'metadata-users',
+      columns: ref([{ id: 'name', header: 'Name', accessorKey: 'name' }, { header: 'Conditional column' }]),
+      storage: memoryStorage(),
+    });
+
+    await table.initialize();
+    expect(table.columns.value).toEqual([{ id: 'name', header: 'Name', accessorKey: 'name' }]);
+    expect(table.fields.value).toBe('id,name');
   });
 });
 

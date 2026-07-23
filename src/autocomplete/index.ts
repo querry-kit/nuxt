@@ -1,35 +1,21 @@
-import type { AxiosInstance } from 'axios';
-import type { MaybeRef } from 'vue';
 import { computed, onMounted, ref, shallowRef, unref, watch } from 'vue';
-
-import { useModuleApi } from '../module-api';
-import type { QueryParameters } from '../types';
-import { isEqual, mergeQuery } from '../utils';
-
-/** Configuration for the portable Query Kit autocomplete composable. */
-export interface UseAutocompleteOptions<TItem extends Record<string, unknown>> {
-  /** Axios client created and configured by the consumer. */
-  api: AxiosInstance;
-  /** Resource endpoint relative to the API version, for example `users`. */
-  endpoint: string;
-  /** Reactive query used to fetch search results. */
-  query?: MaybeRef<QueryParameters | undefined>;
-  /** Selected identity or identities kept loaded even when absent from `query`. */
-  currentValue?: MaybeRef<string | number | Array<string | number> | null | undefined>;
-  /** Resource property used for selection and deduplication; defaults to `id`. */
-  identityKey?: keyof TItem & string;
-  /** Adds a derived `disabled` property to returned options. */
-  itemDisabled?: (item: TItem) => boolean;
-  /** Set false when the consumer wants to invoke `initialize` itself. */
-  immediate?: boolean;
-}
+import { useModuleApi } from '../api';
+import type { UseAutocompleteOptions } from '../types/autocomplete-options';
+import type { QueryParameters } from '../types/module-api';
+import { isEqual } from '../utils/is-equal';
+import { mergeQuery } from '../utils/merge-query';
 
 /**
  * Loads both selected and search-result resources, then combines them without duplicate identities.
  *
  * @typeParam TItem - Resource shape returned by the endpoint.
- * @param options - Endpoint, selected value, search query, and optional option decorator.
+ * @param {UseAutocompleteOptions<TItem>} options - Endpoint, selected value, search query, and optional option decorator.
  * @returns Reactive items and loading state plus explicit loading and refresh actions.
+ *
+ * @remarks
+ * Selected resources are fetched independently from the active search query. This keeps a selected
+ * option renderable when it no longer matches the current search criteria. When requests overlap,
+ * only the newest response for each request type is allowed to update state.
  */
 export function useAutocomplete<TItem extends Record<string, unknown>>(options: UseAutocompleteOptions<TItem>) {
   const identityKey = options.identityKey ?? ('id' as keyof TItem & string);
@@ -38,11 +24,14 @@ export function useAutocomplete<TItem extends Record<string, unknown>>(options: 
   const currentLoading = ref(false);
   const queryLoading = ref(false);
   const error = ref<unknown>();
+
+  // A response may resolve after a newer request; its sequence number then makes it stale.
   let currentRequest = 0;
   let queryRequest = 0;
   const api = useModuleApi(options.api, options.endpoint);
   const loading = computed(() => currentLoading.value || queryLoading.value);
 
+  /** Query that reloads the currently selected identities, if any. */
   const selectedQuery = computed<QueryParameters | undefined>(() => {
     const selected = options.currentValue === undefined ? undefined : unref(options.currentValue);
     if (selected === null || selected === undefined || (Array.isArray(selected) && selected.length === 0))
@@ -53,6 +42,12 @@ export function useAutocomplete<TItem extends Record<string, unknown>>(options: 
     };
   });
 
+  /**
+   * Fetches the resources represented by `currentValue`.
+   *
+   * The selection query is merged with the consumer query so both requests use the same includes,
+   * fields, and other shared query parameters.
+   */
   const loadCurrentItems = async () => {
     const request = ++currentRequest;
     const selected = selectedQuery.value;
@@ -64,6 +59,7 @@ export function useAutocomplete<TItem extends Record<string, unknown>>(options: 
     try {
       const query = mergeQuery((unref(options.query) ?? {}) as QueryParameters, selected);
       const response = await api.query(query);
+      // Ignore an older response when the selection changed while it was in flight.
       if (request === currentRequest) currentValueItems.value = response.data.items as TItem[];
     } catch (caught) {
       if (request === currentRequest) {
@@ -75,11 +71,13 @@ export function useAutocomplete<TItem extends Record<string, unknown>>(options: 
     }
   };
 
+  /** Fetches resources matching the active consumer query. */
   const loadItems = async () => {
     const request = ++queryRequest;
     queryLoading.value = true;
     try {
       const response = await api.query((unref(options.query) ?? {}) as QueryParameters);
+      // Ignore an older response when the search query changed while it was in flight.
       if (request === queryRequest) queryItems.value = response.data.items as TItem[];
     } catch (caught) {
       if (request === queryRequest) {
@@ -91,6 +89,11 @@ export function useAutocomplete<TItem extends Record<string, unknown>>(options: 
     }
   };
 
+  /**
+   * Selected items first, followed by search results that have not already been seen.
+   *
+   * `itemDisabled` is applied only to the returned view; the cached API resources stay unchanged.
+   */
   const items = computed<Array<TItem & { disabled?: boolean }>>(() => {
     const seen = new Set<unknown>();
     const merged: TItem[] = [];
@@ -104,10 +107,15 @@ export function useAutocomplete<TItem extends Record<string, unknown>>(options: 
     return options.itemDisabled ? merged.map((item) => ({ ...item, disabled: options.itemDisabled?.(item) })) : merged;
   });
 
+  /** Loads the selected and searched resources concurrently. */
   const initialize = async () => {
     await Promise.all([loadCurrentItems(), loadItems()]);
   };
+
+  /** Alias for {@link initialize}; provided as the conventional reload action. */
   const refresh = initialize;
+
+  // Selection and search results are intentionally watched separately so one change does not reload both.
   watch(selectedQuery, (next, previous) => {
     if (!isEqual(next, previous)) void loadCurrentItems();
   });
@@ -118,7 +126,19 @@ export function useAutocomplete<TItem extends Record<string, unknown>>(options: 
     },
     { deep: true },
   );
+
+  // Defer the initial request until the composable is mounted unless the consumer opts out.
   if (options.immediate !== false) onMounted(() => void initialize());
 
-  return { items, loading, error, currentValueItems, queryItems, loadCurrentItems, loadItems, initialize, refresh };
+  return {
+    items,
+    loading,
+    error,
+    currentValueItems,
+    queryItems,
+    loadCurrentItems,
+    loadItems,
+    initialize,
+    refresh,
+  };
 }

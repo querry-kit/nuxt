@@ -24,6 +24,35 @@ describe('Query Kit utilities', () => {
     expect(autocomplete.useAutocomplete).toBe(root.useAutocomplete);
     expect(types).toEqual({});
     expect(utils.serializeQuery).toBe(serializeQuery);
+    expect(Object.keys(api).sort()).toEqual(['createApiClient', 'useModuleApi']);
+    expect(Object.keys(table)).toEqual(['useTable']);
+    expect(Object.keys(autocomplete)).toEqual(['useAutocomplete']);
+    expect(Object.keys(utils).sort()).toEqual([
+      'andWhere',
+      'filteringToWhere',
+      'isEqual',
+      'mergeQuery',
+      'parseJson',
+      'pathsToFieldsQuery',
+      'serializeQuery',
+      'sortingToOrderBy',
+      'unflatten',
+    ]);
+    expect(Object.keys(root).sort()).toEqual([
+      'andWhere',
+      'createApiClient',
+      'filteringToWhere',
+      'isEqual',
+      'mergeQuery',
+      'parseJson',
+      'pathsToFieldsQuery',
+      'serializeQuery',
+      'sortingToOrderBy',
+      'unflatten',
+      'useAutocomplete',
+      'useModuleApi',
+      'useTable',
+    ]);
   });
 
   it('serializes values with qs bracket notation', () => {

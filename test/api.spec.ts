@@ -1,8 +1,7 @@
 import type { AxiosInstance, InternalAxiosRequestConfig } from 'axios';
 import { AxiosHeaders } from 'axios';
 
-import { createApiClient } from '../src/api';
-import { useModuleApi } from '../src/module-api';
+import { createApiClient, useModuleApi } from '../src/api';
 
 describe('createApiClient', () => {
   it('uses the resolved v1 endpoint and applies request headers', async () => {

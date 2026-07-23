@@ -14,12 +14,13 @@
 | `update(id, data, query?)` | `PATCH /endpoint/:id`          | Updated item                    |
 | `delete(id, query?)`       | `DELETE /endpoint/:id`         | Deleted item                    |
 
-All public functions and types are available through explicit package exports:
+Runtime functions and type contracts have separate explicit package exports:
 
 ```ts
 import { createApiClient, useModuleApi } from '@querry-kit/nuxt/api';
 import { useTable } from '@querry-kit/nuxt/table';
 import { useAutocomplete } from '@querry-kit/nuxt/autocomplete';
+import type { CreateApiClientOptions, EndpointMap, QueryParameters } from '@querry-kit/nuxt/types';
 ```
 
 The client and endpoint methods return ordinary Axios responses, so existing interceptors, cancellation, and error handling continue to work.

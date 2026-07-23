@@ -1,5 +1,14 @@
 import { createApiClient, useModuleApi } from '@querry-kit/nuxt/api';
+import type { EndpointMap } from '@querry-kit/nuxt/types';
 import { type AxiosAdapter } from 'axios';
+
+interface Resources extends EndpointMap {
+  books: {
+    item: { id: string; title: string };
+    create: never;
+    update: never;
+  };
+}
 
 const adapter: AxiosAdapter = async (config) => ({
   data: {
@@ -21,10 +30,7 @@ export default defineNuxtPlugin(() => {
 
   return {
     provide: {
-      booksApi: useModuleApi<{ books: { item: { id: string; title: string }; create: never; update: never } }, 'books'>(
-        api,
-        'books',
-      ),
+      booksApi: useModuleApi<Resources, 'books'>(api, 'books'),
     },
   };
 });
