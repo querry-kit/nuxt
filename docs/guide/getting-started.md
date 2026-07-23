@@ -9,7 +9,8 @@ pnpm add @querry-kit/nuxt axios @tanstack/table-core @vueuse/core @vueuse/router
 Create the HTTP client in the consumer application, where runtime configuration and authentication belong:
 
 ```ts
-import { createApiClient } from '@querry-kit/nuxt/api';
+import { createApiClient, useModuleApi } from '@querry-kit/nuxt/api';
+import type { EndpointMap } from '@querry-kit/nuxt/types';
 
 const api = createApiClient({
   apiBaseUrl: runtimeConfig.public.apiBaseUrl,
@@ -30,13 +31,13 @@ The client targets `/api/v1`, adds `Request-Source` and `Timezone` headers, and 
 Then model resources once and receive typed CRUD payloads:
 
 ```ts
-type Resources = {
+interface Resources extends EndpointMap {
   books: {
     item: { id: string; title: string };
     create: { title: string };
     update: { title?: string };
   };
-};
+}
 
 const books = useModuleApi<Resources, 'books'>(api, 'books');
 await books.update('book-1', { title: 'New title' });

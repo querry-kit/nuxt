@@ -1,7 +1,6 @@
 import type { AxiosInstance, AxiosResponse } from 'axios';
-
-import type { EndpointDefinition, EndpointMap, PaginatedResponse, QueryParameters } from './types';
-import { serializeQuery } from './utils';
+import type { EndpointDefinition, EndpointMap, PaginatedResponse, QueryParameters } from '../types/module-api';
+import { serializeQuery } from '../utils/serialize-query';
 
 type ItemFor<TMap extends EndpointMap, TEndpoint extends keyof TMap> =
   TMap[TEndpoint] extends EndpointDefinition<infer TItem> ? TItem : never;

@@ -10,7 +10,7 @@ description: 'API overview for @querry-kit/nuxt.'
 import { createApiClient, useModuleApi } from '@querry-kit/nuxt/api';
 import { useTable } from '@querry-kit/nuxt/table';
 import { useAutocomplete } from '@querry-kit/nuxt/autocomplete';
-import type { EndpointMap, TableColumn } from '@querry-kit/nuxt/types';
+import type { EndpointMap, TableColumn, UseAutocompleteOptions, UseTableOptions } from '@querry-kit/nuxt/types';
 ```
 
 ## Main Areas
@@ -25,14 +25,16 @@ import type { EndpointMap, TableColumn } from '@querry-kit/nuxt/types';
 
 ## Public Imports
 
-| Import                          | Contents                                                         |
-| ------------------------------- | ---------------------------------------------------------------- |
-| `@querry-kit/nuxt`              | Re-exports all public runtime functions.                         |
-| `@querry-kit/nuxt/api`          | `createApiClient`, `useModuleApi`, and client types.             |
-| `@querry-kit/nuxt/table`        | `useTable` and `UseTableOptions`.                                |
-| `@querry-kit/nuxt/autocomplete` | `useAutocomplete` and `UseAutocompleteOptions`.                  |
-| `@querry-kit/nuxt/types`        | Endpoint, response, table, persistence, and route-ref contracts. |
-| `@querry-kit/nuxt/utils`        | Serialization and Query Kit state helpers.                       |
+| Import                          | Contents                                                                                                                                                                                                 |
+| ------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@querry-kit/nuxt`              | Every documented runtime function plus all public types as type-only exports.                                                                                                                            |
+| `@querry-kit/nuxt/api`          | `createApiClient`, `useModuleApi`.                                                                                                                                                                      |
+| `@querry-kit/nuxt/table`        | `useTable`.                                                                                                                                                                                             |
+| `@querry-kit/nuxt/autocomplete` | `useAutocomplete`.                                                                                                                                                                                      |
+| `@querry-kit/nuxt/types`        | `ApiVersion`, `CreateApiClientOptions`, `EndpointDefinition`, `EndpointMap`, `PaginatedResponse`, `PaginationMeta`, `QueryParameters`, table contracts, `UseTableOptions`, `UseAutocompleteOptions`. |
+| `@querry-kit/nuxt/utils`        | `andWhere`, `filteringToWhere`, `isEqual`, `mergeQuery`, `parseJson`, `pathsToFieldsQuery`, `serializeQuery`, `sortingToOrderBy`, `unflatten`.                                                          |
+
+Table implementation helpers such as `browserStorage`, `hasColumnId`, `normalisePage`, and `persistedRef` are private. They cannot be imported through a package export.
 
 ## Reference Pages
 

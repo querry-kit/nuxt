@@ -71,15 +71,15 @@ The release workflow checks npm before publishing. The manually published `0.0.1
 
 ## 🧩 Package exports
 
-| Import                          | Purpose                                        |
-| ------------------------------- | ---------------------------------------------- |
-| `@querry-kit/nuxt/api`          | `createApiClient` and `useModuleApi`           |
-| `@querry-kit/nuxt/table`        | Headless, remotely paginated `useTable`        |
-| `@querry-kit/nuxt/autocomplete` | Selection-preserving `useAutocomplete`         |
-| `@querry-kit/nuxt/types`        | Shared endpoint, table, and response contracts |
-| `@querry-kit/nuxt/utils`        | Query serialization and query-state helpers    |
+| Import                          | Public contents                                                                                                                                                                             |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@querry-kit/nuxt/api`          | `createApiClient`, `useModuleApi`                                                                                                                                                          |
+| `@querry-kit/nuxt/table`        | `useTable`                                                                                                                                                                                 |
+| `@querry-kit/nuxt/autocomplete` | `useAutocomplete`                                                                                                                                                                          |
+| `@querry-kit/nuxt/types`        | `ApiVersion`, `CreateApiClientOptions`, endpoint/response contracts, table contracts, `UseTableOptions`, and `UseAutocompleteOptions`                                                   |
+| `@querry-kit/nuxt/utils`        | `andWhere`, `filteringToWhere`, `isEqual`, `mergeQuery`, `parseJson`, `pathsToFieldsQuery`, `serializeQuery`, `sortingToOrderBy`, and `unflatten` |
 
-The root export re-exports the public runtime APIs; use the explicit subpaths when an import communicates intent better.
+The root export re-exports these runtime functions and type contracts. Use the explicit subpaths when an import communicates intent better. Internal split-file helpers such as table storage, page normalization, and column-ID checks are deliberately not package exports.
 
 ## 🔌 Create a client and endpoint
 

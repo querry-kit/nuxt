@@ -6,6 +6,8 @@ function useAutocomplete<TItem>(options: UseAutocompleteOptions<TItem>): Autocom
 
 `useAutocomplete` performs two independent list requests: one for current selected identities and one for the active search query. It merges the results in that order and removes duplicate identities, so currently selected values remain renderable after search criteria change.
 
+Import `useAutocomplete` from `@querry-kit/nuxt/autocomplete` and `UseAutocompleteOptions` type-only from `@querry-kit/nuxt/types`.
+
 ## Returned state and actions
 
 | Value                             | Description                                                        |

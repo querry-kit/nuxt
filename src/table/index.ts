@@ -1,96 +1,31 @@
-import type { AxiosInstance } from 'axios';
-import type { MaybeRef, Ref } from 'vue';
 import { computed, ref, shallowRef, triggerRef, unref, watch } from 'vue';
-
-import { useModuleApi } from '../module-api';
-import type { FilteringState, RoutePageRef, SortingRule, StorageLike, TableColumn, TableColumnInput } from '../types';
-import { andWhere, filteringToWhere, parseJson, pathsToFieldsQuery, sortingToOrderBy } from '../utils';
+import { useModuleApi } from '../api';
+import type { FilteringState, SortingRule, TableColumn, TableColumnInput } from '../types/table';
+import type { UseTableOptions } from '../types/table-options';
+import { andWhere } from '../utils/and-where';
+import { filteringToWhere } from '../utils/filtering-to-where';
+import { pathsToFieldsQuery } from '../utils/paths-to-fields-query';
+import { sortingToOrderBy } from '../utils/sorting-to-order-by';
+import { browserStorage } from './browser-storage';
+import { hasColumnId } from './has-column-id';
+import { normalisePage } from './normalize-page';
+import { persistedRef } from './persisted-ref';
 
 const DEFAULT_ITEMS_PER_PAGE = 25;
 
-/** Configuration for the headless Query Kit table composable. */
-export interface UseTableOptions<
-  TItem extends Record<string, unknown>,
-  TColumn extends TableColumnInput<TItem, object> = TableColumnInput<TItem>,
-> {
-  /** Axios client created and configured by the consumer. */
-  api: AxiosInstance;
-  /** Resource endpoint relative to the API version, for example `books`. */
-  endpoint: string;
-  /** Unique key used for local persistence. `name` is retained as an alias for compatibility. */
-  persistenceKey?: string;
-  /** Deprecated alias for `persistenceKey`. */
-  name?: string;
-  /** Reactive column descriptions. Their IDs determine the selected fields. */
-  columns: Ref<readonly TColumn[]>;
-  /** Fields always included in the backend selection; defaults to `id`. */
-  staticFields?: string[];
-  /** Static relation include payload sent with every query. */
-  staticInclude?: Record<string, unknown>;
-  /** Reactive filter added to every request before user-controlled filters. */
-  staticFilter?: MaybeRef<Record<string, unknown> | undefined>;
-  /** Adds an `isArchived` condition when specified. */
-  isArchived?: boolean;
-  /** Initial page size when no persisted preference exists; defaults to 25. */
-  defaultItemsPerPage?: number;
-  /** Persistence adapter; `localStorage` is used automatically when available. */
-  storage?: StorageLike;
-  /** A ref backed by the consumer's URL query parameter; no router is required. */
-  routePage?: RoutePageRef;
-  /** Row property used by `updateRow`; defaults to `id`. */
-  identityKey?: keyof TItem & string;
-  /** Called after the initial request has completed. */
-  onInitialized?: () => void | Promise<void>;
-  /** Called with current rows after each successful, non-stale request. */
-  onRefreshed?: (items: TItem[]) => void | Promise<void>;
-  /** Called for the latest request failure. */
-  onError?: (error: unknown) => void | Promise<void>;
-}
-
-function browserStorage(): StorageLike | undefined {
-  try {
-    return typeof localStorage === 'undefined' ? undefined : localStorage;
-  } catch {
-    return undefined;
-  }
-}
-
-function persistedRef<T>(key: string, fallback: T, storage?: StorageLike): Ref<T> {
-  const state = ref(storage ? parseJson(storage.getItem(key), fallback) : fallback) as Ref<T>;
-  watch(
-    state,
-    (value) => {
-      try {
-        storage?.setItem(key, JSON.stringify(value));
-      } catch {
-        // Persistence is optional; quota and privacy errors must not break the table.
-      }
-    },
-    { deep: true },
-  );
-  return state;
-}
-
-function normalisePage(value: unknown): number | undefined {
-  const page = typeof value === 'number' ? value : Number(value);
-  return Number.isInteger(page) && page > 0 ? page : undefined;
-}
-
 /**
- * Fetches Query Kit list data and owns portable table state.
- *
- * Consumers provide route and storage adapters explicitly, keeping the composable usable in Vue and Nuxt alike.
+ * Fetches Query Kit list data and owns portable headless-table state.
  *
  * @typeParam TItem - Resource shape returned by the endpoint.
+ * @typeParam TColumn - Renderer-specific column shape retained alongside the Query Kit column metadata.
  * @param options - Endpoint, reactive columns, and optional routing, persistence, and callback adapters.
- * @returns Reactive table state plus `initialize`, `refresh`, and `updateRow` actions.
+ * @returns Reactive query and table state plus `initialize`, `refresh`, and `updateRow` actions.
+ *
+ * @remarks
+ * The composable deliberately receives route and storage adapters from its consumer, so it can run
+ * in Vue and Nuxt applications without depending on either application's router or runtime state.
+ * Overlapping requests are versioned, ensuring an older response cannot overwrite newer table data.
  */
-function hasColumnId<TItem extends Record<string, unknown>, TColumn extends TableColumnInput<TItem, object>>(
-  column: TColumn,
-): column is TColumn & TableColumn<TItem> {
-  return typeof column.id === 'string' && column.id.length > 0;
-}
-
 export function useTable<
   TItem extends Record<string, unknown>,
   TColumn extends TableColumnInput<TItem, object> = TableColumnInput<TItem>,
@@ -98,9 +33,11 @@ export function useTable<
   const persistenceKey = options.persistenceKey ?? options.name;
   if (!persistenceKey) throw new Error('useTable requires a persistenceKey or name.');
   const storage = options.storage ?? browserStorage();
+  // Namespace every persisted preference to prevent tables from sharing state accidentally.
   const key = (suffix: string) => `table:${persistenceKey}:${suffix}`;
   const identityKey = options.identityKey ?? ('id' as keyof TItem & string);
 
+  /** Current page, optionally synchronized with a consumer-owned route ref. */
   const page = ref(normalisePage(options.routePage?.value) ?? 1);
   const itemsPerPage = persistedRef(
     key('items-per-page'),
@@ -117,10 +54,12 @@ export function useTable<
   const totalPages = ref(0);
   const loading = ref(false);
   const error = ref<unknown>();
-  // Only the most recent request may change state; filter/page watchers can overlap.
+  // Only the most recent request may change state; query watchers can overlap.
   let requestVersion = 0;
 
+  /** Columns with IDs, which are the only columns that participate in selection and persistence. */
   const availableColumns = computed(() => options.columns.value.filter(hasColumnId));
+  /** Reconciles persisted column preferences with columns that are currently available. */
   const syncColumnOrder = () => {
     const ids = availableColumns.value.map((column) => column.id);
     columnOrder.value = [
@@ -131,12 +70,14 @@ export function useTable<
   };
   watch(availableColumns, syncColumnOrder, { immediate: true, deep: true });
 
+  /** Visible columns in the user's persisted order. */
   const columns = computed(() =>
     columnOrder.value
       .map((id) => availableColumns.value.find((column) => column.id === id))
       .filter((column): column is TColumn & TableColumn<TItem> => Boolean(column))
       .filter((column) => !columnVisibility.value.includes(column.id)),
   );
+  /** Query Kit field projection derived from visible data columns and required static fields. */
   const fields = computed(() => {
     const paths = new Set<string>(options.staticFields ?? ['id']);
     for (const column of columns.value) {
@@ -146,11 +87,13 @@ export function useTable<
     }
     return pathsToFieldsQuery(paths);
   });
+  /** Filter that is always applied before user-controlled table filters. */
   const staticWhere = computed(() => {
     const archive = options.isArchived === undefined ? undefined : { isArchived: options.isArchived };
     return andWhere(archive, unref(options.staticFilter));
   });
   const where = computed(() => andWhere(staticWhere.value, filteringToWhere(filtering.value)));
+  /** Serialized list-query parameters for the active page, filters, sorting, fields, and includes. */
   const queryParams = computed(() => ({
     page: page.value,
     perPage: itemsPerPage.value,
@@ -160,6 +103,7 @@ export function useTable<
     include: options.staticInclude,
   }));
 
+  // Synchronize in both directions without requiring a Vue Router dependency.
   watch(page, (value) => {
     if (options.routePage && options.routePage.value !== value) options.routePage.value = value;
   });
@@ -171,6 +115,11 @@ export function useTable<
   }
 
   const api = useModuleApi(options.api, options.endpoint);
+  /**
+   * Fetches the current query and replaces the rows and pagination metadata.
+   *
+   * A response is discarded when a newer request started before it settled.
+   */
   const refresh = async () => {
     const version = ++requestVersion;
     loading.value = true;
@@ -191,6 +140,7 @@ export function useTable<
     }
   };
 
+  /** Restores the initial route page, performs the first fetch, and then invokes `onInitialized`. */
   const initialize = async () => {
     const initialPage = normalisePage(options.routePage?.value);
     if (initialPage) page.value = initialPage;
@@ -198,6 +148,11 @@ export function useTable<
     await options.onInitialized?.();
   };
 
+  /**
+   * Merges an updated row into the loaded rows without refetching the table.
+   *
+   * The identity property defaults to `id` and can be configured through `identityKey`.
+   */
   const updateRow = (row: TItem) => {
     const identity = row[identityKey];
     const index = items.value.findIndex((item) => Object.is(item[identityKey], identity));
@@ -207,6 +162,7 @@ export function useTable<
     }
   };
 
+  // Any query-input change reloads data; stale-response protection in `refresh` handles overlap.
   watch([queryParams, fields], () => void refresh(), { deep: true });
 
   return {

@@ -6,6 +6,8 @@ function useTable<TItem, TColumn extends TableColumnInput<TItem>>(options: UseTa
 
 `useTable` is headless remote-table state. It owns query composition and persistence, but not a table renderer, a router, or a global store. Column metadata is preserved verbatim, so a renderer can keep labels, accessors, and custom header data alongside the Query Kit `id` and `fields` metadata.
 
+Import `useTable` from `@querry-kit/nuxt/table`; import `UseTableOptions`, `TableColumnInput`, and related contracts type-only from `@querry-kit/nuxt/types`. The table subpath publishes no storage, page-normalization, or column-filtering helpers.
+
 ## Returned state
 
 | Value                                              | Description                                                 |
