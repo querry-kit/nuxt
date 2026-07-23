@@ -122,7 +122,7 @@ await table.initialize();
 
 The table selects `id,name,team{name}`, serializes its query with `qs`, persists user preferences through a configurable storage adapter, and discards stale responses. `useAutocomplete` similarly keeps selected resources present if the current search no longer returns them.
 
-The package stays independent of Nuxt runtime configuration, application authentication, routers, stores, and UI components. Consumers provide their own Axios instance, route ref, storage adapter, and endpoint map.
+The package stays independent of Nuxt runtime configuration, application authentication, routers, stores, global events, and UI components. Consumers provide their own Axios instance, route ref, storage adapter, and endpoint map.
 
 ## 📖 Documentation
 

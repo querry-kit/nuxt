@@ -32,14 +32,23 @@ export interface StorageLike {
   setItem(key: string, value: string): void;
 }
 
-/** A lightweight column description shared by the core composables and UI package. */
-export interface TableColumn<T> {
-  id: string;
+/**
+ * A renderer-agnostic column description accepted by the table composable.
+ *
+ * `TMeta` lets applications retain renderer-specific metadata such as a label,
+ * accessor, or header renderer without making this package depend on a UI library.
+ */
+export type TableColumnInput<TItem, TMeta extends object = Record<string, unknown>> = TMeta & {
+  /** Omit the ID to exclude a conditional column from the table. */
+  id?: string;
   /** Additional nested fields required when rendering this column. */
   fields?: string[];
-  /** Optional UI metadata deliberately left opaque to the headless core. */
-  [key: string]: unknown;
-}
+};
+
+/** A visible table column with a resolved ID. */
+export type TableColumn<TItem, TMeta extends object = Record<string, unknown>> = TableColumnInput<TItem, TMeta> & {
+  id: string;
+};
 
 /** TanStack-compatible sorting state without a dependency on its UI adapter. */
 export interface SortingRule {

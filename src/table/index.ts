@@ -3,13 +3,16 @@ import type { MaybeRef, Ref } from 'vue';
 import { computed, ref, shallowRef, triggerRef, unref, watch } from 'vue';
 
 import { useModuleApi } from '../module-api';
-import type { FilteringState, RoutePageRef, SortingRule, StorageLike, TableColumn } from '../types';
+import type { FilteringState, RoutePageRef, SortingRule, StorageLike, TableColumn, TableColumnInput } from '../types';
 import { andWhere, filteringToWhere, parseJson, pathsToFieldsQuery, sortingToOrderBy } from '../utils';
 
 const DEFAULT_ITEMS_PER_PAGE = 25;
 
 /** Configuration for the headless Query Kit table composable. */
-export interface UseTableOptions<TItem extends Record<string, unknown>> {
+export interface UseTableOptions<
+  TItem extends Record<string, unknown>,
+  TColumn extends TableColumnInput<TItem, object> = TableColumnInput<TItem>,
+> {
   /** Axios client created and configured by the consumer. */
   api: AxiosInstance;
   /** Resource endpoint relative to the API version, for example `books`. */
@@ -19,7 +22,7 @@ export interface UseTableOptions<TItem extends Record<string, unknown>> {
   /** Deprecated alias for `persistenceKey`. */
   name?: string;
   /** Reactive column descriptions. Their IDs determine the selected fields. */
-  columns: Ref<readonly TableColumn<TItem>[]>;
+  columns: Ref<readonly TColumn[]>;
   /** Fields always included in the backend selection; defaults to `id`. */
   staticFields?: string[];
   /** Static relation include payload sent with every query. */
@@ -82,7 +85,16 @@ function normalisePage(value: unknown): number | undefined {
  * @param options - Endpoint, reactive columns, and optional routing, persistence, and callback adapters.
  * @returns Reactive table state plus `initialize`, `refresh`, and `updateRow` actions.
  */
-export function useTable<TItem extends Record<string, unknown>>(options: UseTableOptions<TItem>) {
+function hasColumnId<TItem extends Record<string, unknown>, TColumn extends TableColumnInput<TItem, object>>(
+  column: TColumn,
+): column is TColumn & TableColumn<TItem> {
+  return typeof column.id === 'string' && column.id.length > 0;
+}
+
+export function useTable<
+  TItem extends Record<string, unknown>,
+  TColumn extends TableColumnInput<TItem, object> = TableColumnInput<TItem>,
+>(options: UseTableOptions<TItem, TColumn>) {
   const persistenceKey = options.persistenceKey ?? options.name;
   if (!persistenceKey) throw new Error('useTable requires a persistenceKey or name.');
   const storage = options.storage ?? browserStorage();
@@ -108,20 +120,21 @@ export function useTable<TItem extends Record<string, unknown>>(options: UseTabl
   // Only the most recent request may change state; filter/page watchers can overlap.
   let requestVersion = 0;
 
+  const availableColumns = computed(() => options.columns.value.filter(hasColumnId));
   const syncColumnOrder = () => {
-    const ids = options.columns.value.map((column) => column.id).filter(Boolean);
+    const ids = availableColumns.value.map((column) => column.id);
     columnOrder.value = [
       ...columnOrder.value.filter((id) => ids.includes(id)),
       ...ids.filter((id) => !columnOrder.value.includes(id)),
     ];
     columnVisibility.value = columnVisibility.value.filter((id) => ids.includes(id));
   };
-  watch(options.columns, syncColumnOrder, { immediate: true, deep: true });
+  watch(availableColumns, syncColumnOrder, { immediate: true, deep: true });
 
   const columns = computed(() =>
     columnOrder.value
-      .map((id) => options.columns.value.find((column) => column.id === id))
-      .filter((column): column is TableColumn<TItem> => Boolean(column))
+      .map((id) => availableColumns.value.find((column) => column.id === id))
+      .filter((column): column is TColumn & TableColumn<TItem> => Boolean(column))
       .filter((column) => !columnVisibility.value.includes(column.id)),
   );
   const fields = computed(() => {

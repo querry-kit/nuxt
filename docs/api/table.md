@@ -1,10 +1,10 @@
 # `useTable`
 
 ```ts
-function useTable<TItem>(options: UseTableOptions<TItem>): TableState<TItem>;
+function useTable<TItem, TColumn extends TableColumnInput<TItem>>(options: UseTableOptions<TItem, TColumn>): TableState<TItem>;
 ```
 
-`useTable` is headless remote-table state. It owns query composition and persistence, but not a table renderer, a router, or a global store.
+`useTable` is headless remote-table state. It owns query composition and persistence, but not a table renderer, a router, or a global store. Column metadata is preserved verbatim, so a renderer can keep labels, accessors, and custom header data alongside the Query Kit `id` and `fields` metadata.
 
 ## Returned state
 
