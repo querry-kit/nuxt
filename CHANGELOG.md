@@ -1,5 +1,15 @@
 # @querry-kit/nuxt
 
+## 0.1.0
+
+### Minor Changes
+
+- d54486a: Accept generic renderer metadata and optional column IDs through `useTable` without adding a UI dependency.
+
+### Patch Changes
+
+- 7233da0: Make package entrypoint exports explicit, keep implementation helpers private, and align documentation and the Nuxt example with the public subpaths.
+
 ## 0.0.5
 
 ### Patch Changes
