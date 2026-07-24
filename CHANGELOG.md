@@ -1,5 +1,11 @@
 # @querry-kit/nuxt
 
+## 0.2.0
+
+### Minor Changes
+
+- 3583237: Add renderer-neutral filter and sorting field contracts to the public types API.
+
 ## 0.1.1
 
 ### Patch Changes
