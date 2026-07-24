@@ -1,5 +1,12 @@
 # @querry-kit/nuxt
 
+## 0.1.1
+
+### Patch Changes
+
+- 1359ef2: Expand test coverage across all runtime functions and branches.
+- 4f3d55d: Move package documentation and examples to the central Querry Kit site.
+
 ## 0.1.0
 
 ### Minor Changes
