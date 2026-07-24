@@ -75,7 +75,7 @@ The release workflow checks npm before publishing. The manually published `0.0.1
 | `@querry-kit/nuxt/api`          | `createApiClient`, `useModuleApi`                                                                                                                 |
 | `@querry-kit/nuxt/table`        | `useTable`                                                                                                                                        |
 | `@querry-kit/nuxt/autocomplete` | `useAutocomplete`                                                                                                                                 |
-| `@querry-kit/nuxt/types`        | `ApiVersion`, `CreateApiClientOptions`, endpoint/response contracts, table contracts, `UseTableOptions`, and `UseAutocompleteOptions`             |
+| `@querry-kit/nuxt/types`        | API contracts, headless table state, filter/sort field definitions, `UseTableOptions`, and `UseAutocompleteOptions`                               |
 | `@querry-kit/nuxt/utils`        | `andWhere`, `filteringToWhere`, `isEqual`, `mergeQuery`, `parseJson`, `pathsToFieldsQuery`, `serializeQuery`, `sortingToOrderBy`, and `unflatten` |
 
 The root export re-exports these runtime functions and type contracts. Use the explicit subpaths when an import communicates intent better. Internal split-file helpers such as table storage, page normalization, and column-ID checks are deliberately not package exports.

@@ -30,19 +30,38 @@ export interface SortingRule {
   desc: boolean;
 }
 
+/** A selectable field offered by a sorting UI. */
+export type SortingField<TMeta extends object = object> = TMeta & {
+  value: string;
+  label: string;
+};
+
+/** A selectable field offered by a filtering UI. */
+export type FilterFieldDefinition<TType extends string = string, TMeta extends object = object> = TMeta & {
+  value: string;
+  label: string;
+  type: TType;
+};
+
+/** The boolean operator used to combine filter conditions. */
+export type FilteringMode = 'AND' | 'OR';
+
+/** Operators supported by the Query Kit `where` query convention. */
+export type FilteringFieldOperator = 'in' | 'notIn' | 'equals' | 'not' | 'lt' | 'lte' | 'gt' | 'gte';
+
 /** A single Query Kit filtering condition. */
-export interface FilteringField {
+export interface FilteringField<TType extends string = string, TOperator extends string = string, TValue = unknown> {
   id: string;
   field: string;
-  type?: string;
-  operator?: string;
-  value?: unknown;
+  type?: TType;
+  operator?: TOperator;
+  value?: TValue;
 }
 
 /** Filtering state emitted by the table UI. */
-export interface FilteringState {
-  operator: 'AND' | 'OR';
-  filters: FilteringField[];
+export interface FilteringState<TField extends FilteringField = FilteringField> {
+  operator: FilteringMode;
+  filters: TField[];
 }
 
 /** Reactive URL query value used for page synchronisation without Vue Router. */

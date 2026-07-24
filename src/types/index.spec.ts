@@ -1,6 +1,9 @@
 import type {
   ApiVersion,
   EndpointMap,
+  FilterFieldDefinition,
+  FilteringFieldOperator,
+  SortingField,
   StorageLike,
   TableColumn,
   UseAutocompleteOptions,
@@ -13,9 +16,22 @@ describe('types public exports', () => {
     const endpoints: EndpointMap = {};
     const storage: StorageLike = { getItem: () => null, setItem: () => undefined };
     const column: TableColumn<{ id: string }> = { id: 'id' };
+    const filter: FilterFieldDefinition<'text'> = { value: 'name', label: 'Name', type: 'text' };
+    const operator: FilteringFieldOperator = 'equals';
+    const sorting: SortingField = { value: 'name', label: 'Name' };
     const autocomplete = {} as UseAutocompleteOptions<{ id: string }>;
     const table = {} as UseTableOptions<{ id: string }>;
 
-    expect([version, endpoints, storage.getItem('value'), column.id, autocomplete, table]).toHaveLength(6);
+    expect([
+      version,
+      endpoints,
+      storage.getItem('value'),
+      column.id,
+      filter,
+      operator,
+      sorting,
+      autocomplete,
+      table,
+    ]).toHaveLength(9);
   });
 });
