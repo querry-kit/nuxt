@@ -12,7 +12,7 @@
     "typescript"
   ],
   "license": "MIT",
-  "homepage": "https://querry-kit.github.io/nuxt/",
+  "homepage": "https://querry-kit.github.io/querry-kit/docs/nuxt",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/querry-kit/nuxt.git"
@@ -88,12 +88,7 @@
     "lint:fix": "eslint . --fix",
     "test": "jest --config ./jest.config.cjs",
     "test:coverage": "jest --config ./jest.config.cjs --coverage",
-    "test:watch": "jest --config ./jest.config.cjs --watch",
-    "examples:check": "pnpm --dir examples/nuxt exec nuxi typecheck",
-    "examples:build": "pnpm --dir examples/nuxt build",
-    "docs:dev": "pnpm --filter docs dev",
-    "docs:build": "pnpm --filter docs build",
-    "docs:preview": "pnpm --filter docs preview"
+    "test:watch": "jest --config ./jest.config.cjs --watch"
   },
   "peerDependencies": {
     "@tanstack/table-core": "^8.21.3",

@@ -12,13 +12,12 @@
 [![test](https://img.shields.io/github/actions/workflow/status/querry-kit/nuxt/test.yml?branch=main&label=test&logo=jest&logoColor=white&style=for-the-badge)](https://github.com/querry-kit/nuxt/actions/workflows/test.yml)
 [![coverage](https://img.shields.io/github/actions/workflow/status/querry-kit/nuxt/test.yml?branch=main&label=coverage&logo=jest&logoColor=white&style=for-the-badge)](https://github.com/querry-kit/nuxt/actions/workflows/test.yml)
 [![lint](https://img.shields.io/github/actions/workflow/status/querry-kit/nuxt/lint.yml?branch=main&label=lint&logo=eslint&logoColor=white&style=for-the-badge)](https://github.com/querry-kit/nuxt/actions/workflows/lint.yml)
-[![docs](https://img.shields.io/github/actions/workflow/status/querry-kit/nuxt/docs.yml?branch=main&label=docs&logo=vitepress&logoColor=white&style=for-the-badge)](https://github.com/querry-kit/nuxt/actions/workflows/docs.yml)
 [![changesets](https://img.shields.io/github/actions/workflow/status/querry-kit/nuxt/changesets.yml?branch=main&label=changesets&logo=changesets&logoColor=white&style=for-the-badge)](https://github.com/querry-kit/nuxt/actions/workflows/changesets.yml)
 [![npm publish](https://img.shields.io/github/actions/workflow/status/querry-kit/nuxt/release.yml?branch=main&label=npm%20publish&logo=githubactions&logoColor=white&style=for-the-badge)](https://github.com/querry-kit/nuxt/actions/workflows/release.yml)
 
 Typed Vue 3 and Nuxt primitives for APIs implementing the Query Kit `ResourceQuery` contract: an Axios client, typed resource endpoints, headless remote tables, and autocompletes.
 
-📖 Documentation: https://querry-kit.github.io/nuxt/
+📖 Documentation: https://querry-kit.github.io/querry-kit/docs/nuxt
 
 ## 🌐 Querry Kit Ecosystem
 
@@ -71,12 +70,12 @@ The release workflow checks npm before publishing. The manually published `0.0.1
 
 ## 🧩 Package exports
 
-| Import                          | Public contents                                                                                                                                                                             |
-| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `@querry-kit/nuxt/api`          | `createApiClient`, `useModuleApi`                                                                                                                                                          |
-| `@querry-kit/nuxt/table`        | `useTable`                                                                                                                                                                                 |
-| `@querry-kit/nuxt/autocomplete` | `useAutocomplete`                                                                                                                                                                          |
-| `@querry-kit/nuxt/types`        | `ApiVersion`, `CreateApiClientOptions`, endpoint/response contracts, table contracts, `UseTableOptions`, and `UseAutocompleteOptions`                                                   |
+| Import                          | Public contents                                                                                                                                   |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@querry-kit/nuxt/api`          | `createApiClient`, `useModuleApi`                                                                                                                 |
+| `@querry-kit/nuxt/table`        | `useTable`                                                                                                                                        |
+| `@querry-kit/nuxt/autocomplete` | `useAutocomplete`                                                                                                                                 |
+| `@querry-kit/nuxt/types`        | `ApiVersion`, `CreateApiClientOptions`, endpoint/response contracts, table contracts, `UseTableOptions`, and `UseAutocompleteOptions`             |
 | `@querry-kit/nuxt/utils`        | `andWhere`, `filteringToWhere`, `isEqual`, `mergeQuery`, `parseJson`, `pathsToFieldsQuery`, `serializeQuery`, `sortingToOrderBy`, and `unflatten` |
 
 The root export re-exports these runtime functions and type contracts. Use the explicit subpaths when an import communicates intent better. Internal split-file helpers such as table storage, page normalization, and column-ID checks are deliberately not package exports.
@@ -126,28 +125,8 @@ The package stays independent of Nuxt runtime configuration, application authent
 
 ## 📖 Documentation
 
-- [Getting Started](https://querry-kit.github.io/nuxt/guide/getting-started)
-- [Controller Contract](https://querry-kit.github.io/nuxt/guide/controller-contract)
-- [Remote Tables](https://querry-kit.github.io/nuxt/guide/table)
-- [Autocomplete](https://querry-kit.github.io/nuxt/guide/autocomplete)
-- [Query conventions](https://querry-kit.github.io/nuxt/guide/query-conventions)
-- [Example App](https://querry-kit.github.io/nuxt/guide/example-app)
-- [Client and endpoints](https://querry-kit.github.io/nuxt/api/client)
-- [Table API](https://querry-kit.github.io/nuxt/api/table)
-- [Autocomplete API](https://querry-kit.github.io/nuxt/api/autocomplete)
-- [Backend compatibility](https://querry-kit.github.io/nuxt/api/query-kit)
-
-Run the VitePress documentation locally:
-
-```sh
-pnpm docs:dev
-```
-
-Build the documentation:
-
-```sh
-pnpm docs:build
-```
+The complete API reference, guides, and examples live in the central Querry Kit documentation:
+<https://querry-kit.github.io/querry-kit/docs/nuxt>
 
 ## 🛠 Development
 
@@ -158,9 +137,6 @@ pnpm check
 pnpm test
 pnpm test:coverage
 pnpm build
-pnpm examples:check
-pnpm examples:build
-pnpm docs:build
 ```
 
 `pnpm test:coverage` collects all source files, prints the coverage summary, and writes HTML and LCOV reports to `coverage/`. GitHub Actions runs the same command and retains the report as a workflow artifact.
