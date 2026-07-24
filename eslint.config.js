@@ -82,7 +82,7 @@ export default [
     },
   },
   {
-    files: ['**/*.spec.ts', '**/*.test.ts', 'test/**/*.ts', 'jest.setup.ts'],
+    files: ['**/*.spec.ts', '**/*.test.ts', 'jest.setup.ts'],
     languageOptions: {
       globals: {
         afterAll: 'readonly',
