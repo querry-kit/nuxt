@@ -47,9 +47,6 @@ jobs:
           pnpm check
           pnpm build
           pnpm test:coverage
-          pnpm examples:check
-          pnpm examples:build
-          pnpm docs:build
 
       - name: Resolve release version
         id: version

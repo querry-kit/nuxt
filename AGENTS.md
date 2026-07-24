@@ -15,7 +15,7 @@
 ## Public API and TypeScript
 
 - Everything exported from `src/index.ts` and the configured package subpaths is public API: `.`, `./api`, `./table`, `./autocomplete`, `./types`, and `./utils`.
-- Preserve both ESM and CommonJS compatibility. Add or change public exports only with matching JSDoc, tests, README, and VitePress updates.
+- Preserve both ESM and CommonJS compatibility. Add or change public exports only with matching JSDoc, tests, README, and central documentation updates.
 - Use strict TypeScript, named exports, and `unknown` for unconstrained values. Keep implementation independent of Nuxt-only APIs.
 - Public composables receive Axios clients and application state explicitly. Consumer applications own authentication, runtime config, workspace URL logic, global events, and endpoint maps.
 
@@ -23,7 +23,7 @@
 
 - Aim for 100% runtime line coverage; exclude only type-only and generated modules, never executable runtime code.
 - For code changes, run `pnpm lint`, `pnpm check`, `pnpm build`, and `pnpm test:coverage`.
-- For documentation changes, run `pnpm docs:build`; for example or workflow changes, run the corresponding package scripts or validate equivalent commands.
+- For documentation changes, validate the central documentation app in its checkout; for workflow changes, validate the corresponding package commands or equivalent CI commands.
 - For package export changes, verify the built ESM and CommonJS entrypoints.
 - If a verification command cannot be run, report that explicitly.
 
@@ -42,6 +42,6 @@
 
 ## Documentation
 
-- Keep the English README and VitePress documentation aligned with public APIs, examples, installation, and release workflow.
-- Keep navigation, sidebar entries, and linked pages in sync for VitePress changes.
-- Docs examples must use the published `@querry-kit/nuxt` package name and remain practical.
+- Keep the English README aligned with public APIs, installation, and release workflow.
+- The canonical package documentation is maintained in the central Querry Kit site at `https://querry-kit.github.io/querry-kit/docs/nuxt`; make documentation changes in that checkout.
+- Central docs examples must use the published `@querry-kit/nuxt` package name and remain practical.

@@ -1,7 +1,5 @@
 packages:
   - .
-  - docs
-  - examples/nuxt
 
 nodeVersion: 24.18.0
 minimumReleaseAge: 1440
