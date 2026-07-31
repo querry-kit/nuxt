@@ -1,5 +1,11 @@
 # @querry-kit/nuxt
 
+## 0.2.1
+
+### Patch Changes
+
+- cf0b8b8: Add security reporting and repository maintenance configuration.
+
 ## 0.2.0
 
 ### Minor Changes
