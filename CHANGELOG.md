@@ -1,5 +1,11 @@
 # @querry-kit/nuxt
 
+## 0.2.3
+
+### Patch Changes
+
+- 944000b: Keep the central documentation changelog in sync after releases.
+
 ## 0.2.2
 
 ### Patch Changes
