@@ -21,6 +21,8 @@ permissions:
 jobs:
   release:
     runs-on: ubuntu-latest
+    env:
+      QUERRY_KIT_DOCS_TOKEN: ${{ secrets.QUERRY_KIT_DOCS_TOKEN }}
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -109,3 +111,13 @@ jobs:
           gh release create "${{ steps.version.outputs.tag }}" \
             --title "${{ steps.version.outputs.tag }}" \
             --notes "Install with: pnpm add @querry-kit/nuxt"
+
+      - name: Trigger Querry Kit documentation build
+        if: steps.existing-tag.outputs.exists == 'false' && env.QUERRY_KIT_DOCS_TOKEN != ''
+        run: |
+          curl --fail --request POST \
+            --url "https://api.github.com/repos/querry-kit/querry-kit/dispatches" \
+            --header "Accept: application/vnd.github+json" \
+            --header "Authorization: Bearer ${QUERRY_KIT_DOCS_TOKEN}" \
+            --header "X-GitHub-Api-Version: 2022-11-28" \
+            --data '{"event_type":"package-changelog-updated","client_payload":{"package":"@querry-kit/nuxt","version":"${{ steps.version.outputs.version }}"}}'
