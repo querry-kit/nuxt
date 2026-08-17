@@ -1,5 +1,11 @@
 # @querry-kit/nuxt
 
+## 0.2.2
+
+### Patch Changes
+
+- f83b766: Update transitive dependencies to resolve security alerts.
+
 ## 0.2.1
 
 ### Patch Changes
