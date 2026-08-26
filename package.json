@@ -104,7 +104,7 @@
   "devDependencies": {
     "@changesets/cli": "^3.0.0",
     "@jest/types": "^30.4.1",
-    "@tanstack/table-core": "^8.21.3",
+    "@tanstack/table-core": "^9.1.2",
     "@types/jest": "^30.0.0",
     "@types/node": "^26.2.0",
     "@types/qs": "^6.15.1",
