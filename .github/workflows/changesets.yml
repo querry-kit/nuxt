@@ -37,7 +37,7 @@ jobs:
 
       - name: Create or update release PR
         id: changesets
-        uses: changesets/action@v1
+        uses: changesets/action@v2
         with:
           version: pnpm changeset version
         env:
