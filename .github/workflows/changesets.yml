@@ -39,7 +39,7 @@ jobs:
         id: changesets
         uses: changesets/action@v2
         with:
-          version: pnpm changeset version
+          version-script: pnpm changeset version
         env:
           GITHUB_TOKEN: ${{ github.token }}
 
