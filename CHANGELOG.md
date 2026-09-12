@@ -1,5 +1,14 @@
 # @querry-kit/nuxt
 
+## 0.2.4
+
+### Patch Changes
+
+- 301a41c: Fix the Changesets v2 workflow input so release pull requests can be created and updated again.
+- c78c2b0: Resolve vulnerable transitive browser data and YAML parser versions.
+- 493c5e4: Update Jest to 30.5.1 and keep clean CI installs compatible with its watcher dependency.
+- e05c99d: Update the development Vue Router version to 5.3.1.
+
 ## 0.2.3
 
 ### Patch Changes
