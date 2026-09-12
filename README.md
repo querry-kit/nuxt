@@ -139,4 +139,7 @@ pnpm test:coverage
 pnpm build
 ```
 
+The workspace build allowlist permits the native scripts required by the test
+toolchain, including Parcel's file watcher.
+
 `pnpm test:coverage` collects all source files, prints the coverage summary, and writes HTML and LCOV reports to `coverage/`. GitHub Actions runs the same command and retains the report as a workflow artifact.
