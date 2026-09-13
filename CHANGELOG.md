@@ -1,5 +1,11 @@
 # @querry-kit/nuxt
 
+## 0.2.5
+
+### Patch Changes
+
+- 3ce3252: Update runtime and development dependencies.
+
 ## 0.2.4
 
 ### Patch Changes
