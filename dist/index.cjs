@@ -1,0 +1,488 @@
+"use strict";
+var __create = Object.create;
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __getProtoOf = Object.getPrototypeOf;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, { get: all[name], enumerable: true });
+};
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+  }
+  return to;
+};
+var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(
+  // If the importer is in node compatibility mode or this is not an ESM
+  // file that has been converted to a CommonJS file using a Babel-
+  // compatible transform (i.e. "__esModule" has not been set), then set
+  // "default" to the CommonJS "module.exports" for node compatibility.
+  isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target,
+  mod
+));
+var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+
+// src/index.ts
+var src_exports = {};
+__export(src_exports, {
+  andWhere: () => andWhere,
+  createApiClient: () => createApiClient,
+  filteringToWhere: () => filteringToWhere,
+  isEqual: () => isEqual,
+  mergeQuery: () => mergeQuery,
+  parseJson: () => parseJson,
+  pathsToFieldsQuery: () => pathsToFieldsQuery,
+  serializeQuery: () => serializeQuery,
+  sortingToOrderBy: () => sortingToOrderBy,
+  unflatten: () => unflatten,
+  useAutocomplete: () => useAutocomplete,
+  useModuleApi: () => useModuleApi,
+  useTable: () => useTable
+});
+module.exports = __toCommonJS(src_exports);
+
+// src/api/api-client.ts
+var import_axios = require("axios");
+function createApiClient(options, version = "v1") {
+  const { apiBaseUrl, getToken, resolveBaseUrl, requestSource = "web", getTimezone } = options;
+  const resolved = resolveBaseUrl ? resolveBaseUrl(apiBaseUrl) : apiBaseUrl;
+  const baseURL = `${resolved.replace(/\/$/, "")}/api/${version}`;
+  const api = (0, import_axios.create)({ baseURL });
+  api.interceptors.request.use(async (config) => {
+    const headers = import_axios.AxiosHeaders.from(config.headers);
+    headers.set("Request-Source", requestSource);
+    const timezone = getTimezone?.() ?? Intl.DateTimeFormat().resolvedOptions().timeZone;
+    if (timezone) headers.set("Timezone", timezone);
+    const token = await getToken?.();
+    if (token) headers.set("Authorization", `Bearer ${token}`);
+    config.headers = headers;
+    return config;
+  });
+  return api;
+}
+
+// src/utils/serialize-query.ts
+var import_qs = __toESM(require("qs"), 1);
+function serializeQuery(query = {}) {
+  return import_qs.default.stringify(query, { addQueryPrefix: true, encodeValuesOnly: true });
+}
+
+// src/api/module-api.ts
+function useModuleApi(api, endpoint) {
+  const path = `/${endpoint.replace(/^\/+/, "")}`;
+  const withQuery = (query = {}) => serializeQuery(query);
+  const resource = (id) => `${path}/${encodeURIComponent(String(id))}`;
+  return {
+    query(query = {}) {
+      return api.get(`${path}${withQuery(query)}`);
+    },
+    get(id, query = {}) {
+      return api.get(`${resource(id)}${withQuery(query)}`);
+    },
+    findById(id, query = {}) {
+      return api.get(`${path}/find-by-id/${encodeURIComponent(String(id))}${withQuery(query)}`);
+    },
+    count(query = {}) {
+      return api.get(`${path}/count${withQuery(query)}`);
+    },
+    create(data, query = {}) {
+      return api.post(`${path}${withQuery(query)}`, data);
+    },
+    update(id, data, query = {}) {
+      return api.patch(`${resource(id)}${withQuery(query)}`, data);
+    },
+    delete(id, query = {}) {
+      return api.delete(`${resource(id)}${withQuery(query)}`);
+    }
+  };
+}
+
+// src/autocomplete/index.ts
+var import_vue = require("vue");
+
+// src/utils/is-equal.ts
+function isEqual(left, right) {
+  if (Object.is(left, right)) return true;
+  if (!left || !right || typeof left !== "object" || typeof right !== "object") return false;
+  if (Array.isArray(left) || Array.isArray(right)) {
+    return Array.isArray(left) && Array.isArray(right) && left.length === right.length && left.every((item, i) => isEqual(item, right[i]));
+  }
+  const leftRecord = left;
+  const rightRecord = right;
+  const keys = Object.keys(leftRecord);
+  return keys.length === Object.keys(rightRecord).length && keys.every((key) => isEqual(leftRecord[key], rightRecord[key]));
+}
+
+// src/utils/merge-query.ts
+function mergeQuery(base, extra) {
+  const result = { ...base };
+  for (const [key, value] of Object.entries(extra)) {
+    const existing = result[key];
+    result[key] = existing && value && typeof existing === "object" && typeof value === "object" && !Array.isArray(existing) && !Array.isArray(value) ? mergeQuery(existing, value) : value;
+  }
+  return result;
+}
+
+// src/autocomplete/index.ts
+function useAutocomplete(options) {
+  const identityKey = options.identityKey ?? "id";
+  const currentValueItems = (0, import_vue.shallowRef)([]);
+  const queryItems = (0, import_vue.shallowRef)([]);
+  const currentLoading = (0, import_vue.ref)(false);
+  const queryLoading = (0, import_vue.ref)(false);
+  const error = (0, import_vue.ref)();
+  let currentRequest = 0;
+  let queryRequest = 0;
+  const api = useModuleApi(options.api, options.endpoint);
+  const loading = (0, import_vue.computed)(() => currentLoading.value || queryLoading.value);
+  const selectedQuery = (0, import_vue.computed)(() => {
+    const selected = options.currentValue === void 0 ? void 0 : (0, import_vue.unref)(options.currentValue);
+    if (selected === null || selected === void 0 || Array.isArray(selected) && selected.length === 0)
+      return void 0;
+    return {
+      where: { [identityKey]: Array.isArray(selected) ? { in: selected } : selected },
+      perPage: 1e3
+    };
+  });
+  const loadCurrentItems = async () => {
+    const request = ++currentRequest;
+    const selected = selectedQuery.value;
+    if (!selected) {
+      currentValueItems.value = [];
+      return;
+    }
+    currentLoading.value = true;
+    try {
+      const query = mergeQuery((0, import_vue.unref)(options.query) ?? {}, selected);
+      const response = await api.query(query);
+      if (request === currentRequest) currentValueItems.value = response.data.items;
+    } catch (caught) {
+      if (request === currentRequest) {
+        currentValueItems.value = [];
+        error.value = caught;
+      }
+    } finally {
+      if (request === currentRequest) currentLoading.value = false;
+    }
+  };
+  const loadItems = async () => {
+    const request = ++queryRequest;
+    queryLoading.value = true;
+    try {
+      const response = await api.query((0, import_vue.unref)(options.query) ?? {});
+      if (request === queryRequest) queryItems.value = response.data.items;
+    } catch (caught) {
+      if (request === queryRequest) {
+        queryItems.value = [];
+        error.value = caught;
+      }
+    } finally {
+      if (request === queryRequest) queryLoading.value = false;
+    }
+  };
+  const items = (0, import_vue.computed)(() => {
+    const seen = /* @__PURE__ */ new Set();
+    const merged = [];
+    for (const item of [...currentValueItems.value, ...queryItems.value]) {
+      const identity = item[identityKey];
+      if (!seen.has(identity)) {
+        seen.add(identity);
+        merged.push(item);
+      }
+    }
+    return options.itemDisabled ? merged.map((item) => ({ ...item, disabled: options.itemDisabled?.(item) })) : merged;
+  });
+  const initialize = async () => {
+    await Promise.all([loadCurrentItems(), loadItems()]);
+  };
+  const refresh = initialize;
+  (0, import_vue.watch)(selectedQuery, (next, previous) => {
+    if (!isEqual(next, previous)) void loadCurrentItems();
+  });
+  (0, import_vue.watch)(
+    () => (0, import_vue.unref)(options.query),
+    (next, previous) => {
+      if (!isEqual(next, previous)) void loadItems();
+    },
+    { deep: true }
+  );
+  if (options.immediate !== false) (0, import_vue.onMounted)(() => void initialize());
+  return {
+    items,
+    loading,
+    error,
+    currentValueItems,
+    queryItems,
+    loadCurrentItems,
+    loadItems,
+    initialize,
+    refresh
+  };
+}
+
+// src/table/index.ts
+var import_vue3 = require("vue");
+
+// src/utils/and-where.ts
+function andWhere(...conditions) {
+  const present = conditions.filter((condition) => Boolean(condition));
+  if (present.length === 0) return void 0;
+  return present.length === 1 ? present[0] : { AND: present };
+}
+
+// src/utils/unflatten.ts
+function unflatten(value) {
+  const result = {};
+  for (const [path, item] of Object.entries(value)) {
+    const parts = path.split(".").filter(Boolean);
+    if (parts.length === 0) continue;
+    let cursor = result;
+    for (const [index, part] of parts.entries()) {
+      if (index === parts.length - 1) {
+        cursor[part] = item;
+      } else {
+        const child = cursor[part];
+        if (!child || typeof child !== "object" || Array.isArray(child)) cursor[part] = {};
+        cursor = cursor[part];
+      }
+    }
+  }
+  return result;
+}
+
+// src/utils/filtering-to-where.ts
+function filteringToWhere(filtering) {
+  const conditions = filtering.filters.filter((filter) => filter.value !== void 0).map((filter) => {
+    const value = filter.operator ? { [filter.operator]: filter.value } : filter.value;
+    return unflatten({ [filter.field]: value });
+  });
+  if (conditions.length === 0) return void 0;
+  if (filtering.operator === "OR") return { OR: conditions };
+  else if (conditions.length === 1) return conditions[0];
+  else return { AND: conditions };
+}
+
+// src/utils/paths-to-fields-query.ts
+function pathsToFieldsQuery(paths) {
+  const tree = {};
+  for (const path of paths) {
+    const parts = path.split(".").filter(Boolean);
+    if (parts.length === 0) continue;
+    let cursor = tree;
+    for (const [index, key] of parts.entries()) {
+      const isLeaf = index === parts.length - 1;
+      if (isLeaf) {
+        if (cursor[key] === void 0) cursor[key] = true;
+        continue;
+      }
+      if (cursor[key] === void 0 || cursor[key] === true) cursor[key] = {};
+      cursor = cursor[key];
+    }
+  }
+  const stringify = (node) => Object.entries(node).map(([key, value]) => value === true ? key : `${key}{${stringify(value)}}`).join(",");
+  const result = stringify(tree);
+  return result || void 0;
+}
+
+// src/utils/sorting-to-order-by.ts
+function sortingToOrderBy(sorting) {
+  if (sorting.length === 0) return void 0;
+  return sorting.map(({ id, desc }) => unflatten({ [id]: desc ? "desc" : "asc" }));
+}
+
+// src/table/browser-storage.ts
+function browserStorage() {
+  try {
+    return typeof localStorage === "undefined" ? void 0 : localStorage;
+  } catch {
+    return void 0;
+  }
+}
+
+// src/table/has-column-id.ts
+function hasColumnId(column) {
+  return typeof column.id === "string" && column.id.length > 0;
+}
+
+// src/table/normalize-page.ts
+function normalisePage(value) {
+  const page = typeof value === "number" ? value : Number(value);
+  return Number.isInteger(page) && page > 0 ? page : void 0;
+}
+
+// src/table/persisted-ref.ts
+var import_vue2 = require("vue");
+
+// src/utils/parse-json.ts
+function parseJson(value, fallback) {
+  if (!value) return fallback;
+  try {
+    return JSON.parse(value);
+  } catch {
+    return fallback;
+  }
+}
+
+// src/table/persisted-ref.ts
+function persistedRef(key, fallback, storage) {
+  const state = (0, import_vue2.ref)(storage ? parseJson(storage.getItem(key), fallback) : fallback);
+  (0, import_vue2.watch)(
+    state,
+    (value) => {
+      try {
+        storage?.setItem(key, JSON.stringify(value));
+      } catch {
+      }
+    },
+    { deep: true }
+  );
+  return state;
+}
+
+// src/table/index.ts
+var DEFAULT_ITEMS_PER_PAGE = 25;
+function useTable(options) {
+  const persistenceKey = options.persistenceKey ?? options.name;
+  if (!persistenceKey) throw new Error("useTable requires a persistenceKey or name.");
+  const storage = options.storage ?? browserStorage();
+  const key = (suffix) => `table:${persistenceKey}:${suffix}`;
+  const identityKey = options.identityKey ?? "id";
+  const page = (0, import_vue3.ref)(normalisePage(options.routePage?.value) ?? 1);
+  const itemsPerPage = persistedRef(
+    key("items-per-page"),
+    options.defaultItemsPerPage ?? DEFAULT_ITEMS_PER_PAGE,
+    storage
+  );
+  const sorting = persistedRef(key("sort"), [], storage);
+  const filtering = persistedRef(key("filtering"), { operator: "AND", filters: [] }, storage);
+  const columnOrder = persistedRef(key("column-order"), [], storage);
+  const columnVisibility = persistedRef(key("invisible-columns"), [], storage);
+  const columnPinning = persistedRef(key("column-pinning"), {}, storage);
+  const items = (0, import_vue3.shallowRef)([]);
+  const totalItems = (0, import_vue3.ref)(0);
+  const totalPages = (0, import_vue3.ref)(0);
+  const loading = (0, import_vue3.ref)(false);
+  const error = (0, import_vue3.ref)();
+  let requestVersion = 0;
+  const availableColumns = (0, import_vue3.computed)(() => options.columns.value.filter(hasColumnId));
+  const syncColumnOrder = () => {
+    const ids = availableColumns.value.map((column) => column.id);
+    columnOrder.value = [
+      ...columnOrder.value.filter((id) => ids.includes(id)),
+      ...ids.filter((id) => !columnOrder.value.includes(id))
+    ];
+    columnVisibility.value = columnVisibility.value.filter((id) => ids.includes(id));
+  };
+  (0, import_vue3.watch)(availableColumns, syncColumnOrder, { immediate: true, deep: true });
+  const columns = (0, import_vue3.computed)(
+    () => columnOrder.value.map((id) => availableColumns.value.find((column) => column.id === id)).filter((column) => Boolean(column)).filter((column) => !columnVisibility.value.includes(column.id))
+  );
+  const fields = (0, import_vue3.computed)(() => {
+    const paths = new Set(options.staticFields ?? ["id"]);
+    for (const column of columns.value) {
+      if (column.id === "actions") continue;
+      if (column.fields?.length) column.fields.forEach((field) => paths.add(`${column.id}.${field}`));
+      else paths.add(column.id);
+    }
+    return pathsToFieldsQuery(paths);
+  });
+  const staticWhere = (0, import_vue3.computed)(() => {
+    const archive = options.isArchived === void 0 ? void 0 : { isArchived: options.isArchived };
+    return andWhere(archive, (0, import_vue3.unref)(options.staticFilter));
+  });
+  const where = (0, import_vue3.computed)(() => andWhere(staticWhere.value, filteringToWhere(filtering.value)));
+  const queryParams = (0, import_vue3.computed)(() => ({
+    page: page.value,
+    perPage: itemsPerPage.value,
+    where: where.value ? JSON.stringify(where.value) : void 0,
+    orderBy: sortingToOrderBy(sorting.value) ? JSON.stringify(sortingToOrderBy(sorting.value)) : void 0,
+    fields: fields.value,
+    include: options.staticInclude
+  }));
+  (0, import_vue3.watch)(page, (value) => {
+    if (options.routePage && options.routePage.value !== value) options.routePage.value = value;
+  });
+  if (options.routePage) {
+    (0, import_vue3.watch)(options.routePage, (value) => {
+      const next = normalisePage(value);
+      if (next && next !== page.value) page.value = next;
+    });
+  }
+  const api = useModuleApi(options.api, options.endpoint);
+  const refresh = async () => {
+    const version = ++requestVersion;
+    loading.value = true;
+    error.value = void 0;
+    try {
+      const response = await api.query(queryParams.value);
+      if (version !== requestVersion) return;
+      items.value = response.data.items;
+      totalItems.value = response.data.meta.itemCount;
+      totalPages.value = response.data.meta.pageCount;
+      await options.onRefreshed?.(items.value);
+    } catch (caught) {
+      if (version !== requestVersion) return;
+      error.value = caught;
+      await options.onError?.(caught);
+    } finally {
+      if (version === requestVersion) loading.value = false;
+    }
+  };
+  const initialize = async () => {
+    const initialPage = normalisePage(options.routePage?.value);
+    if (initialPage) page.value = initialPage;
+    await refresh();
+    await options.onInitialized?.();
+  };
+  const updateRow = (row) => {
+    const identity = row[identityKey];
+    const index = items.value.findIndex((item) => Object.is(item[identityKey], identity));
+    if (index !== -1) {
+      items.value[index] = { ...items.value[index], ...row };
+      (0, import_vue3.triggerRef)(items);
+    }
+  };
+  (0, import_vue3.watch)([queryParams, fields], () => void refresh(), { deep: true });
+  return {
+    page,
+    itemsPerPage,
+    sorting,
+    filtering,
+    columnOrder,
+    columnVisibility,
+    columnPinning,
+    columns,
+    fields,
+    items,
+    totalItems,
+    totalPages,
+    loading,
+    error,
+    queryParams,
+    initialize,
+    refresh,
+    updateRow
+  };
+}
+// Annotate the CommonJS export names for ESM import in node:
+0 && (module.exports = {
+  andWhere,
+  createApiClient,
+  filteringToWhere,
+  isEqual,
+  mergeQuery,
+  parseJson,
+  pathsToFieldsQuery,
+  serializeQuery,
+  sortingToOrderBy,
+  unflatten,
+  useAutocomplete,
+  useModuleApi,
+  useTable
+});
+//# sourceMappingURL=index.cjs.map
