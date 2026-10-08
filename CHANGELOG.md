@@ -1,5 +1,11 @@
 # @querry-kit/nuxt
 
+## 0.2.6
+
+### Patch Changes
+
+- 6fe4dcf: Resolve vulnerable transitive development dependencies.
+
 ## 0.2.5
 
 ### Patch Changes
