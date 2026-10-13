@@ -1,5 +1,11 @@
 # @querry-kit/nuxt
 
+## 0.2.7
+
+### Patch Changes
+
+- ee2d9c7: Refresh dependencies within their supported version ranges.
+
 ## 0.2.6
 
 ### Patch Changes
