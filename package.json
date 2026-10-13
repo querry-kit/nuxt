@@ -91,7 +91,7 @@
     "test:watch": "jest --config ./jest.config.cjs --watch"
   },
   "peerDependencies": {
-    "@tanstack/table-core": "^8.21.3",
+    "@tanstack/table-core": "^9.2.6",
     "@vueuse/core": "^14.3.0",
     "@vueuse/router": "^14.3.0",
     "vue": "^3.5.40",
@@ -104,7 +104,7 @@
   "devDependencies": {
     "@changesets/cli": "^3.0.2",
     "@jest/types": "^30.5.1",
-    "@tanstack/table-core": "^8.21.3",
+    "@tanstack/table-core": "^9.2.6",
     "@types/jest": "^30.0.0",
     "@types/node": "^26.5.1",
     "@types/qs": "^6.15.1",
