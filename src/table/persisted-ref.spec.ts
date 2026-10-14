@@ -31,6 +31,21 @@ describe('persistedRef', () => {
     expect(state.value).toBe(50);
   });
 
+  it.each(['null', '"wrong"'])('falls back for invalid saved types: %s', (saved) => {
+    expect(persistedRef('page-size', 25, { getItem: () => saved, setItem: () => {} }).value).toBe(25);
+  });
+
+  it('falls back when reading storage throws', () => {
+    expect(
+      persistedRef('page-size', 25, {
+        getItem: () => {
+          throw new Error('blocked');
+        },
+        setItem: () => {},
+      }).value,
+    ).toBe(25);
+  });
+
   it('uses its fallback without an optional storage adapter', () => {
     const state = persistedRef('page-size', 25);
 

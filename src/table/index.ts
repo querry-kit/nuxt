@@ -10,6 +10,7 @@ import { browserStorage } from './browser-storage';
 import { hasColumnId } from './has-column-id';
 import { normalisePage } from './normalize-page';
 import { persistedRef } from './persisted-ref';
+import { isFilteringState, isPinningState, isSortingState, isStringArray } from './preference-validation';
 
 const DEFAULT_ITEMS_PER_PAGE = 25;
 
@@ -34,6 +35,12 @@ export function useTable<
   if (!persistenceKey) throw new Error('useTable requires a persistenceKey or name.');
   const storage = options.storage ?? browserStorage();
   // Namespace every persisted preference to prevent tables from sharing state accidentally.
+  /**
+   * Builds a table-specific preference key.
+   *
+   * @param {string} suffix Preference name.
+   * @returns {string} Namespaced storage key.
+   */
   const key = (suffix: string) => `table:${persistenceKey}:${suffix}`;
   const identityKey = options.identityKey ?? ('id' as keyof TItem & string);
 
@@ -43,12 +50,18 @@ export function useTable<
     key('items-per-page'),
     options.defaultItemsPerPage ?? DEFAULT_ITEMS_PER_PAGE,
     storage,
+    (value) => typeof value === 'number' && Number.isInteger(value) && value >= 1 && value <= 1000,
   );
-  const sorting = persistedRef<SortingRule[]>(key('sort'), [], storage);
-  const filtering = persistedRef<FilteringState>(key('filtering'), { operator: 'AND', filters: [] }, storage);
-  const columnOrder = persistedRef<string[]>(key('column-order'), [], storage);
-  const columnVisibility = persistedRef<string[]>(key('invisible-columns'), [], storage);
-  const columnPinning = persistedRef<Record<string, string[]>>(key('column-pinning'), {}, storage);
+  const sorting = persistedRef<SortingRule[]>(key('sort'), [], storage, isSortingState);
+  const filtering = persistedRef<FilteringState>(
+    key('filtering'),
+    { operator: 'AND', filters: [] },
+    storage,
+    isFilteringState,
+  );
+  const columnOrder = persistedRef<string[]>(key('column-order'), [], storage, isStringArray);
+  const columnVisibility = persistedRef<string[]>(key('invisible-columns'), [], storage, isStringArray);
+  const columnPinning = persistedRef<Record<string, string[]>>(key('column-pinning'), {}, storage, isPinningState);
   const items = shallowRef<TItem[]>([]);
   const totalItems = ref(0);
   const totalPages = ref(0);

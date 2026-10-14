@@ -53,6 +53,7 @@ export function useAutocomplete<TItem extends Record<string, unknown>>(options: 
     const selected = selectedQuery.value;
     if (!selected) {
       currentValueItems.value = [];
+      currentLoading.value = false;
       return;
     }
     currentLoading.value = true;
@@ -121,9 +122,7 @@ export function useAutocomplete<TItem extends Record<string, unknown>>(options: 
   });
   watch(
     () => unref(options.query),
-    (next, previous) => {
-      if (!isEqual(next, previous)) void loadItems();
-    },
+    () => void loadItems(),
     { deep: true },
   );
 
