@@ -14,5 +14,5 @@ export default defineConfig({
   sourcemap: true,
   clean: true,
   target: 'es2022',
-  external: ['@tanstack/table-core', '@vueuse/core', '@vueuse/router', 'axios', 'qs', 'vue', 'vue-router'],
+  external: ['@vueuse/core', '@vueuse/router', 'axios', 'qs', 'vue', 'vue-router'],
 });

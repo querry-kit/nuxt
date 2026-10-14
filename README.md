@@ -43,7 +43,7 @@ It also contains the complete Workboard API-and-web-app example, which shows the
 ## 📦 Install
 
 ```sh
-pnpm add @querry-kit/nuxt axios @tanstack/table-core @vueuse/core @vueuse/router vue vue-router
+pnpm add @querry-kit/nuxt axios @vueuse/core @vueuse/router vue vue-router
 ```
 
 The current package version is published on npm. npm is the primary distribution channel.
@@ -145,3 +145,7 @@ toolchain, including Parcel's file watcher.
 `pnpm test:coverage` collects all source files, prints the coverage summary, and writes HTML and LCOV reports to `coverage/`. GitHub Actions runs the same command and retains the report as a workflow artifact.
 
 Dependency maintenance updates manifests and the pnpm lockfile within supported version ranges.
+
+TanStack Table is not a peer dependency: the composables use renderer-independent column metadata and sorting state.
+
+Query path expansion ignores `__proto__`, `constructor`, and `prototype` segments. Autocomplete reloads after nested query mutations and clears its loading state when a pending selection is removed. Stored table preferences are validated before use; malformed values or unavailable storage fall back to defaults.

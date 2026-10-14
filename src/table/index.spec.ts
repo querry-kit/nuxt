@@ -22,6 +22,23 @@ function memoryStorage(): StorageLike & { values: Map<string, string> } {
 }
 
 describe('useTable', () => {
+  it('restores defaults for malformed persisted table preferences', () => {
+    const table = useTable<User>({
+      api: { get: jest.fn() } as unknown as AxiosInstance,
+      endpoint: 'users',
+      columns: ref([{ id: 'name' }]),
+      persistenceKey: 'invalid',
+      storage: { getItem: () => 'null', setItem: () => {} },
+    });
+
+    expect(table.itemsPerPage.value).toBe(25);
+    expect(table.sorting.value).toEqual([]);
+    expect(table.filtering.value).toEqual({ operator: 'AND', filters: [] });
+    expect(table.columnOrder.value).toEqual(['name']);
+    expect(table.columnVisibility.value).toEqual([]);
+    expect(table.columnPinning.value).toEqual({});
+  });
+
   it('requires an explicit persistence key', () => {
     expect(() =>
       useTable<User>({

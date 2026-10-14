@@ -1,5 +1,5 @@
 import type { AxiosInstance } from 'axios';
-import { nextTick, ref } from 'vue';
+import { effectScope, nextTick, ref } from 'vue';
 
 import { useAutocomplete } from './index';
 
@@ -111,6 +111,54 @@ describe('useAutocomplete', () => {
 
     expect(get).toHaveBeenCalledTimes(4);
     expect(autocomplete.items.value).toEqual([{ id: 'one', name: 'One' }]);
+  });
+
+  it('reloads after a nested query mutation', async () => {
+    const scope = effectScope();
+    const query = ref({ where: { name: 'Ada' } });
+    const get = jest.fn().mockResolvedValue({ data: { items: [] } });
+    scope.run(() =>
+      useAutocomplete({ api: { get } as unknown as AxiosInstance, endpoint: 'people', query, immediate: false }),
+    );
+
+    query.value.where.name = 'Bob';
+    await nextTick();
+    await Promise.resolve();
+
+    expect(get).toHaveBeenCalledTimes(1);
+    expect(get).toHaveBeenCalledWith(expect.stringContaining('Bob'));
+    scope.stop();
+  });
+
+  it('stops loading when an in-flight selection is cleared', async () => {
+    const scope = effectScope();
+    let resolve!: (value: unknown) => void;
+    const get = jest.fn(
+      () =>
+        new Promise((done) => {
+          resolve = done;
+        }),
+    );
+    const selected = ref<string | null>('one');
+    const autocomplete = scope.run(() =>
+      useAutocomplete({
+        api: { get } as unknown as AxiosInstance,
+        endpoint: 'people',
+        currentValue: selected,
+        immediate: false,
+      }),
+    )!;
+    const pending = autocomplete.loadCurrentItems();
+
+    selected.value = null;
+    await nextTick();
+    expect(autocomplete.loading.value).toBe(false);
+    resolve({ data: { items: [{ id: 'one' }] } });
+    await pending;
+
+    expect(autocomplete.currentValueItems.value).toEqual([]);
+    expect(autocomplete.loading.value).toBe(false);
+    scope.stop();
   });
 
   it('queries multiple selected identities with an `in` condition', async () => {
