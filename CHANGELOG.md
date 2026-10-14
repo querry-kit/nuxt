@@ -1,5 +1,11 @@
 # @querry-kit/nuxt
 
+## 0.2.8
+
+### Patch Changes
+
+- 4c8546b: Remove the unused TanStack Table peer, prevent prototype pollution, validate stored table preferences, and fix autocomplete query updates and loading state.
+
 ## 0.2.7
 
 ### Patch Changes
