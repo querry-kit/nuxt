@@ -1,7 +1,7 @@
 packages:
   - .
 
-nodeVersion: 24.18.0
+nodeVersion: 26.13.0
 minimumReleaseAge: 1440
 
 overrides:

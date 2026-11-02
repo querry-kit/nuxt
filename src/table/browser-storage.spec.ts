@@ -12,20 +12,33 @@ describe('browserStorage', () => {
     else Reflect.deleteProperty(globalThis, 'localStorage');
   });
 
-  it('returns undefined when storage is unavailable or throws while being accessed', () => {
+  it('returns undefined when storage is unavailable', () => {
     const originalStorage = Object.getOwnPropertyDescriptor(globalThis, 'localStorage');
     Reflect.deleteProperty(globalThis, 'localStorage');
     expect(browserStorage()).toBeUndefined();
 
-    Object.defineProperty(globalThis, 'localStorage', {
-      configurable: true,
+    if (originalStorage) Object.defineProperty(globalThis, 'localStorage', originalStorage);
+    else Reflect.deleteProperty(globalThis, 'localStorage');
+  });
+
+  it('returns undefined when accessing browser storage throws', () => {
+    const originalGlobal = globalThis;
+    const originalDescriptor = Object.getOwnPropertyDescriptor(originalGlobal, 'globalThis');
+    const browserGlobal = Object.defineProperty({}, 'localStorage', {
       get: () => {
         throw new Error('storage unavailable');
       },
     });
-    expect(browserStorage()).toBeUndefined();
 
-    if (originalStorage) Object.defineProperty(globalThis, 'localStorage', originalStorage);
-    else Reflect.deleteProperty(globalThis, 'localStorage');
+    // Node's contextified global can swallow accessor errors; use an ordinary browser global.
+    Object.defineProperty(originalGlobal, 'globalThis', { configurable: true, value: browserGlobal });
+    let result: ReturnType<typeof browserStorage>;
+    try {
+      result = browserStorage();
+    } finally {
+      if (originalDescriptor) Object.defineProperty(originalGlobal, 'globalThis', originalDescriptor);
+      else Reflect.deleteProperty(originalGlobal, 'globalThis');
+    }
+    expect(result).toBeUndefined();
   });
 });
