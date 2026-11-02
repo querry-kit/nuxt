@@ -91,8 +91,8 @@
     "test:watch": "jest --config ./jest.config.cjs --watch"
   },
   "peerDependencies": {
-    "@vueuse/core": "^14.3.0",
-    "@vueuse/router": "^14.3.0",
+    "@vueuse/core": "^14.3.0 || ^15.0.0",
+    "@vueuse/router": "^14.3.0 || ^15.0.0",
     "vue": "^3.5.40",
     "vue-router": "^5.2.0"
   },
