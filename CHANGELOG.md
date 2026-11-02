@@ -1,5 +1,11 @@
 # @querry-kit/nuxt
 
+## 0.2.10
+
+### Patch Changes
+
+- 33fee30: Declare VueUse 15 compatibility alongside existing VueUse 14 support. The module already builds and tests against VueUse 15; this aligns the published peer contract with validated consumers without dropping VueUse 14.
+
 ## 0.2.9
 
 ### Patch Changes
