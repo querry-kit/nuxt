@@ -210,7 +210,6 @@ a total group count. There is no global record page in grouped mode.
 
 Configure the backend routes as described in the Nest Query Service grouping guide:
 use the same static/tenant/access constraints for counts and records, allowlist scalar
-fields, enable `preserveJsonWhereTypes`, and avoid `QueryTransformPipe` on these
-routes. Client filtering is not authorization. Null keys remain real group values;
+fields, enable `preserveJsonWhereTypes` on the service and, when used, on `QueryTransformPipe`. Client filtering is not authorization. Null keys remain real group values;
 relations, date intervals, and snapshot-consistent pagination are outside this API.
 After data mutations, call `refresh()` to reload counts and membership.
