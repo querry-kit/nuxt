@@ -36,6 +36,15 @@ export function useModuleApi<TMap extends EndpointMap, TEndpoint extends keyof T
     findById(id: string | number, query: QueryParameters = {}): Promise<AxiosResponse<ItemFor<TMap, TEndpoint>>> {
       return api.get(`${path}/find-by-id/${encodeURIComponent(String(id))}${withQuery(query)}`);
     },
+    /**
+     * Fetches scalar group keys and aggregates from an application-owned grouping route.
+     *
+     * @param {QueryParameters} query Group keys, filters, selectors and pagination.
+     * @returns {Promise<AxiosResponse<TResult[]>>} Group rows, not resource items.
+     */
+    groupBy<TResult = unknown>(query: QueryParameters): Promise<AxiosResponse<TResult[]>> {
+      return api.get(`${path}/group-by${withQuery(query)}`);
+    },
     count(query: QueryParameters = {}): Promise<AxiosResponse<number>> {
       return api.get(`${path}/count${withQuery(query)}`);
     },

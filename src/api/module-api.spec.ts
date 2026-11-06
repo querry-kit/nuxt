@@ -21,6 +21,8 @@ describe('useModuleApi', () => {
     await users.create({ name: 'Ada' }, { dryRun: true });
     await users.update('a', { name: 'Grace' });
     await users.delete('a');
+    await users.groupBy({ by: ['status'], _count: { _all: true } });
+    expect(get).toHaveBeenNthCalledWith(5, '/users/group-by?by[0]=status&_count[_all]=true');
 
     expect(get).toHaveBeenNthCalledWith(1, '/users?where=%7B%22name%22%3A%22Ada%22%7D');
     expect(get).toHaveBeenNthCalledWith(2, '/users/a%2Fb?include[team]=true');

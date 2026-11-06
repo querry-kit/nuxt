@@ -1,6 +1,7 @@
 export { createApiClient, useModuleApi } from './api';
 export { useAutocomplete } from './autocomplete';
 export { useTable } from './table';
+export { useGroupedTable } from './table/grouped';
 export type {
   ApiVersion,
   CreateApiClientOptions,
@@ -23,6 +24,15 @@ export type {
   UseAutocompleteOptions,
   UseTableOptions,
 } from './types';
+export type {
+  GroupBranch,
+  GroupNode,
+  GroupPath,
+  GroupPathEntry,
+  GroupValue,
+  GroupingField,
+  UseGroupedTableOptions,
+} from './types/grouping';
 export {
   andWhere,
   filteringToWhere,
