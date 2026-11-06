@@ -1,5 +1,21 @@
 # @querry-kit/nuxt
 
+## 1.0.0
+
+### Major Changes
+
+- 0dfdbf2: Require Node.js 26.13.0 or newer and drop Node.js 24 support. Upgrade application runtimes and CI before updating.
+
+### Minor Changes
+
+- ae55a5f: Add scalar group-by API requests and lazy server-backed nested table groups.
+
+### Patch Changes
+
+- 0dfdbf2: Refresh compatible dependencies and the lockfile while preserving the TypeScript compatibility toolchain and security overrides.
+- ae55a5f: Keep grouping documentation aligned with the current Node.js 26 baseline.
+- ae55a5f: Document the typed JSON filter option for global query pipes.
+
 ## 0.2.10
 
 ### Patch Changes
