@@ -152,7 +152,13 @@ Query path expansion ignores `__proto__`, `constructor`, and `prototype` segment
 
 ## Development toolchain
 
-Use Node.js 26.13.0 LTS and the package manager pinned in `package.json`. Published library runtime compatibility remains unchanged. Builds use TypeScript 7; ESLint and compiler-API consumers use the TypeScript 6 compatibility package. Dependency overrides, where present, pin security fixes for transitive packages; validate tests and documentation builds when changing them.
+Use Node.js 26.13.0 LTS and the package manager pinned in `package.json`. This release requires Node.js 26.13.0 or newer and no longer supports Node.js 24. Upgrade application runtimes and CI before updating the package. Builds use TypeScript 7; ESLint and compiler-API consumers use the TypeScript 6 compatibility package. Dependency overrides, where present, pin security fixes for transitive packages; validate tests and documentation builds when changing them.
+
+### Dependency maintenance
+
+Development and type checks use Vue 3.5.45 and the exact `vue-tsc` 3.3.14 pin. VueUse 14 and 15 remain supported; consumer peer ranges are unchanged.
+
+Dependency refreshes retain pnpm 11.28.9, the existing TypeScript 6/7 split, and security overrides. Candidates published less than 24 hours ago are deferred; dependency major migrations are outside this update.
 
 ## Server-backed nested groups
 
