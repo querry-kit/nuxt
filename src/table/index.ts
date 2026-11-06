@@ -12,6 +12,8 @@ import { normalisePage } from './normalize-page';
 import { persistedRef } from './persisted-ref';
 import { isFilteringState, isPinningState, isSortingState, isStringArray } from './preference-validation';
 
+export { useGroupedTable } from './grouped';
+
 const DEFAULT_ITEMS_PER_PAGE = 25;
 
 /**

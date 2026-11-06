@@ -14,6 +14,7 @@ describe('root public exports', () => {
       'sortingToOrderBy',
       'unflatten',
       'useAutocomplete',
+      'useGroupedTable',
       'useModuleApi',
       'useTable',
     ]);
