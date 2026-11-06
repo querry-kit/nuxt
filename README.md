@@ -152,4 +152,4 @@ Query path expansion ignores `__proto__`, `constructor`, and `prototype` segment
 
 ## Development toolchain
 
-Use Node.js 26.13.0 LTS and the package manager pinned in `package.json`. Published library runtime compatibility remains unchanged. Builds use TypeScript 7; ESLint and compiler-API consumers use the TypeScript 6 compatibility package. Dependency overrides, where present, pin security fixes for transitive packages; validate tests and documentation builds when changing them.
+Use Node.js 26.13.0 LTS and the package manager pinned in `package.json`. This release requires Node.js 26.13.0 or newer and no longer supports Node.js 24. Upgrade application runtimes and CI before updating the package. Builds use TypeScript 7; ESLint and compiler-API consumers use the TypeScript 6 compatibility package. Dependency overrides, where present, pin security fixes for transitive packages; validate tests and documentation builds when changing them.
