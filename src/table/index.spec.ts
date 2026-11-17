@@ -22,6 +22,80 @@ function memoryStorage(): StorageLike & { values: Map<string, string> } {
 }
 
 describe('useTable', () => {
+  it('appends in infinite mode, retries the same page, and invalidates an append on mode change', async () => {
+    const get = jest.fn();
+    const routePage = ref<string | number>('3');
+    const storage = memoryStorage();
+    /** Returns a one-row response with three pages in the result set. */
+    const result = (id: string) => ({ data: { items: [{ id, name: id }], meta: { itemCount: 3, pageCount: 3 } } });
+    get.mockResolvedValue(result('1'));
+    const table = useTable<User>({
+      api: { get } as unknown as AxiosInstance,
+      endpoint: 'users',
+      persistenceKey: 'infinite-users',
+      initialMode: 'infinite',
+      defaultItemsPerPage: 1,
+      columns: ref([{ id: 'name' }]),
+      routePage,
+      storage,
+    });
+    await table.initialize();
+    expect(routePage.value).toBe(1);
+    routePage.value = '5';
+    await nextTick();
+    expect(routePage.value).toBe(1);
+    table.page.value = 5;
+    await nextTick();
+    expect(table.page.value).toBe(1);
+    expect(table.hasMore.value).toBe(true);
+    get.mockRejectedValueOnce(new Error('offline')).mockResolvedValueOnce(result('2'));
+    await table.loadMore();
+    expect(table.items.value.map(({ id }) => id)).toEqual(['1']);
+    expect(table.error.value).toBeInstanceOf(Error);
+    await table.loadMore();
+    expect(
+      get.mock.calls.slice(1, 3).map(([url]) => new URL(url, 'https://fixture.invalid').searchParams.get('page')),
+    ).toEqual(['2', '2']);
+    expect(table.items.value.map(({ id }) => id)).toEqual(['1', '2']);
+
+    const stale = deferred<ReturnType<typeof result>>();
+    get.mockReturnValueOnce(stale.promise);
+    const pending = table.loadMore();
+    await table.loadMore();
+    expect(get).toHaveBeenCalledTimes(4);
+    table.loadingMode.value = 'pagination';
+    await nextTick();
+    stale.resolve(result('3'));
+    await pending;
+    expect(table.items.value.map(({ id }) => id)).toEqual(['1']);
+    expect(table.hasMore.value).toBe(false);
+    expect(table.page.value).toBe(1);
+  });
+
+  it('restarts accumulated rows when the infinite-scroll query changes', async () => {
+    const get = jest
+      .fn()
+      .mockResolvedValue({ data: { items: [{ id: '1', name: 'Ada' }], meta: { itemCount: 2, pageCount: 2 } } });
+    const table = useTable<User>({
+      api: { get } as unknown as AxiosInstance,
+      endpoint: 'users',
+      persistenceKey: 'query-reset',
+      initialMode: 'infinite',
+      defaultItemsPerPage: 1,
+      columns: ref([{ id: 'name' }]),
+      storage: memoryStorage(),
+    });
+    await table.initialize();
+    get.mockResolvedValueOnce({ data: { items: [{ id: '2', name: 'Grace' }], meta: { itemCount: 2, pageCount: 2 } } });
+    await table.loadMore();
+    expect(table.hasMore.value).toBe(false);
+    table.sorting.value = [{ id: 'name', desc: true }];
+    await nextTick();
+    await nextTick();
+    expect(table.items.value.map(({ id }) => id)).toEqual(['1']);
+    expect(get).toHaveBeenLastCalledWith(expect.stringContaining('page=1'));
+  });
+
   it('restores defaults for malformed persisted table preferences', () => {
     const table = useTable<User>({
       api: { get: jest.fn() } as unknown as AxiosInstance,

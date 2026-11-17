@@ -162,6 +162,12 @@ Dependency refreshes retain pnpm 11.28.9, the existing TypeScript 6/7 split, and
 
 ## Server-backed nested groups
 
+For a flat `useTable`, bind `loadingMode` to the footer switch. The initial mode
+is `pagination` unless you pass `initialMode: 'infinite'`. In infinite mode use
+`loadMore()` when the user nears the end and stop when `hasMore` is false.
+`loadMore()` also retries the failed page when `error` is set. The route page
+stays at 1 while subsequent pages are appended.
+
 `useGroupedTable` loads complete groups independently of ordinary list pagination.
 Each header shows the count of all matching accessible records. Child groups and
 leaf records load only when opened; each branch has its own continuation state.
@@ -207,6 +213,18 @@ Errors remain local to the affected branch; call its load-more action again to r
 Callbacks `onInitialized`, `onRefreshed` (the branch's accumulated records), and
 `onError` are optional. A unique `identityKey` defaults to `id` and provides a stable
 record-sort tie-breaker. Group keys sort ascending; grouping fields can be reordered.
+
+Pass `loading: {}` to opt in to switchable row loading. Use
+`loading: { initialMode: 'infinite', initialGroupItems: 5, groupLoadMoreItems: 10 }`
+to start with five rows per visible leaf and append ten at a time. Both sizes
+default to the current page size. Set `preloadGroupItems: false` to fetch the first
+rows only when a leaf opens. Intermediate branches load child groups on expansion.
+
+In pagination mode, use `getItemPage(path)` for the reactive page and total, and
+`loadItemsPage(path, page)` to replace that leaf's rows. An empty path addresses
+the ungrouped root. In infinite mode, use `loadMoreItems(path)` to append a batch.
+The same action retries a failed row request in either mode. Changing `loadingMode`
+restarts the rows while retaining the displayed group tree and expansion state.
 
 The API client also exposes `groupBy<TResult>(query)`, returning an Axios response
 whose data is `TResult[]`, from `GET /:resource/group-by`. A request uses bracket

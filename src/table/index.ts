@@ -1,7 +1,7 @@
 import { computed, ref, shallowRef, triggerRef, unref, watch } from 'vue';
 import { useModuleApi } from '../api';
 import type { FilteringState, SortingRule, TableColumn, TableColumnInput } from '../types/table';
-import type { UseTableOptions } from '../types/table-options';
+import type { TableLoadingMode, UseTableOptions } from '../types/table-options';
 import { andWhere } from '../utils/and-where';
 import { filteringToWhere } from '../utils/filtering-to-where';
 import { pathsToFieldsQuery } from '../utils/paths-to-fields-query';
@@ -47,7 +47,8 @@ export function useTable<
   const identityKey = options.identityKey ?? ('id' as keyof TItem & string);
 
   /** Current page, optionally synchronized with a consumer-owned route ref. */
-  const page = ref(normalisePage(options.routePage?.value) ?? 1);
+  const loadingMode = ref<TableLoadingMode>(options.initialMode ?? 'pagination');
+  const page = ref(loadingMode.value === 'infinite' ? 1 : (normalisePage(options.routePage?.value) ?? 1));
   const itemsPerPage = persistedRef(
     key('items-per-page'),
     options.defaultItemsPerPage ?? DEFAULT_ITEMS_PER_PAGE,
@@ -71,6 +72,8 @@ export function useTable<
   const error = ref<unknown>();
   // Only the most recent request may change state; query watchers can overlap.
   let requestVersion = 0;
+  const nextPage = ref(1);
+  const hasMore = computed(() => loadingMode.value === 'infinite' && nextPage.value <= totalPages.value);
 
   /** Columns with IDs, which are the only columns that participate in selection and persistence. */
   const availableColumns = computed(() => options.columns.value.filter(hasColumnId));
@@ -108,22 +111,38 @@ export function useTable<
     return andWhere(archive, unref(options.staticFilter));
   });
   const where = computed(() => andWhere(staticWhere.value, filteringToWhere(filtering.value)));
+  const orderBy = computed(() => {
+    const rules = sorting.value;
+    return sortingToOrderBy(
+      loadingMode.value === 'infinite' && !rules.some((rule) => rule.id === identityKey)
+        ? [...rules, { id: identityKey, desc: false }]
+        : rules,
+    );
+  });
   /** Serialized list-query parameters for the active page, filters, sorting, fields, and includes. */
   const queryParams = computed(() => ({
-    page: page.value,
+    page: loadingMode.value === 'infinite' ? 1 : page.value,
     perPage: itemsPerPage.value,
     where: where.value ? JSON.stringify(where.value) : undefined,
-    orderBy: sortingToOrderBy(sorting.value) ? JSON.stringify(sortingToOrderBy(sorting.value)) : undefined,
+    orderBy: orderBy.value ? JSON.stringify(orderBy.value) : undefined,
     fields: fields.value,
     include: options.staticInclude,
   }));
 
   // Synchronize in both directions without requiring a Vue Router dependency.
   watch(page, (value) => {
+    if (loadingMode.value === 'infinite' && value !== 1) {
+      page.value = 1;
+      return;
+    }
     if (options.routePage && options.routePage.value !== value) options.routePage.value = value;
   });
   if (options.routePage) {
     watch(options.routePage, (value) => {
+      if (loadingMode.value === 'infinite') {
+        if (value !== 1) options.routePage!.value = 1;
+        return;
+      }
       const next = normalisePage(value);
       if (next && next !== page.value) page.value = next;
     });
@@ -131,23 +150,29 @@ export function useTable<
 
   const api = useModuleApi(options.api, options.endpoint);
   /**
-   * Fetches the current query and replaces the rows and pagination metadata.
+   * Fetches a replacement page or appends the requested infinite-scroll batch.
    *
-   * A response is discarded when a newer request started before it settled.
+   * @param {number} requestedPage Page to fetch.
+   * @param {boolean} append Whether to retain the already loaded rows.
+   * @returns {Promise<void>} Completion of the fetch and callbacks.
    */
-  const refresh = async () => {
+  const fetchPage = async (requestedPage: number, append: boolean) => {
     const version = ++requestVersion;
+    const query = queryParams.value;
+    const mode = loadingMode.value;
     loading.value = true;
     error.value = undefined;
     try {
-      const response = await api.query(queryParams.value);
-      if (version !== requestVersion) return;
-      items.value = response.data.items as TItem[];
+      const response = await api.query({ ...query, page: requestedPage });
+      if (version !== requestVersion || query !== queryParams.value || mode !== loadingMode.value) return;
+      const rows = response.data.items as TItem[];
+      items.value = append ? [...items.value, ...rows] : rows;
       totalItems.value = response.data.meta.itemCount;
       totalPages.value = response.data.meta.pageCount;
+      nextPage.value = rows.length ? requestedPage + 1 : totalPages.value + 1;
       await options.onRefreshed?.(items.value);
     } catch (caught) {
-      if (version !== requestVersion) return;
+      if (version !== requestVersion || query !== queryParams.value || mode !== loadingMode.value) return;
       error.value = caught;
       await options.onError?.(caught);
     } finally {
@@ -155,10 +180,35 @@ export function useTable<
     }
   };
 
+  /**
+   * Reloads the current pagination page or restarts infinite scroll at page 1.
+   * @returns {Promise<void>} Completion of the replacement request.
+   */
+  const refresh = async () => {
+    if (loadingMode.value === 'infinite') {
+      nextPage.value = 1;
+      items.value = [];
+      totalItems.value = 0;
+      totalPages.value = 0;
+    }
+    await fetchPage(queryParams.value.page, false);
+  };
+
+  /**
+   * Appends the next batch or retries the failed infinite-scroll request.
+   * @returns {Promise<void>} Completion of the optional request.
+   */
+  const loadMore = async () => {
+    if (loadingMode.value !== 'infinite' || loading.value || (!hasMore.value && !error.value)) return;
+    await fetchPage(nextPage.value, true);
+  };
+
   /** Restores the initial route page, performs the first fetch, and then invokes `onInitialized`. */
   const initialize = async () => {
     const initialPage = normalisePage(options.routePage?.value);
-    if (initialPage) page.value = initialPage;
+    if (loadingMode.value === 'infinite') {
+      if (options.routePage) options.routePage.value = 1;
+    } else if (initialPage) page.value = initialPage;
     await refresh();
     await options.onInitialized?.();
   };
@@ -178,10 +228,26 @@ export function useTable<
   };
 
   // Any query-input change reloads data; stale-response protection in `refresh` handles overlap.
-  watch([queryParams, fields], () => void refresh(), { deep: true });
+  watch(
+    [loadingMode, queryParams, fields],
+    ([mode], [previousMode]) => {
+      if (mode !== previousMode) {
+        page.value = 1;
+        items.value = [];
+        totalItems.value = 0;
+        totalPages.value = 0;
+        if (options.routePage) options.routePage.value = 1;
+      }
+      void refresh();
+    },
+    { deep: true },
+  );
 
   return {
     page,
+    loadingMode,
+    hasMore,
+    loadMore,
     itemsPerPage,
     sorting,
     filtering,

@@ -21,15 +21,18 @@ export type {
   StorageLike,
   TableColumn,
   TableColumnInput,
+  TableLoadingMode,
   UseAutocompleteOptions,
   UseTableOptions,
 } from './types';
 export type {
   GroupBranch,
+  GroupItemPage,
   GroupNode,
   GroupPath,
   GroupPathEntry,
   GroupValue,
+  GroupedTableLoadingOptions,
   GroupingField,
   UseGroupedTableOptions,
 } from './types/grouping';
