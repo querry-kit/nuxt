@@ -68,6 +68,93 @@ const settle = async () => {
 };
 
 describe('useGroupedTable', () => {
+  it('preloads displayed nested leaves and atomically appends unequal batches through the final row', async () => {
+    const f = fixture({ loading: { initialMode: 'infinite', initialGroupItems: 3, groupLoadMoreItems: 5 } });
+    expect(() => fixture({ loading: { initialGroupItems: 0 } })).toThrow('initialGroupItems');
+    await f.table.initialize();
+    expect(f.get).toHaveBeenCalledTimes(1);
+    const parent = f.table.groups.value[0]!;
+    await f.table.toggleGroup(parent.path);
+    const leaf = parent.children[0]!;
+    expect(leaf.expanded).toBe(false);
+    expect(leaf.items).toHaveLength(3);
+    const initial = leaf.items;
+    const original = f.get.getMockImplementation()!;
+    f.get.mockImplementationOnce(original).mockRejectedValueOnce(new Error('second page failed'));
+    await f.table.loadMoreItems(leaf.path);
+    expect(leaf.items).toBe(initial);
+    expect(leaf.error).toBeInstanceOf(Error);
+    await f.table.loadMoreItems(leaf.path);
+    expect(leaf.items).toHaveLength(8);
+    expect(f.requests.slice(-2).map(({ page, perPage }) => [page, perPage])).toEqual([
+      ['1', '5'],
+      ['2', '5'],
+    ]);
+    for (let i = 0; i < 3; i++) await f.table.loadMoreItems(leaf.path);
+    expect(leaf.items.map(({ id }) => id)).toEqual(
+      data.filter(({ status, category }) => status === '001' && category === leaf.value).map(({ id }) => id),
+    );
+    expect(leaf.hasMore).toBe(false);
+    await f.table.toggleGroup(leaf.path);
+    f.table.loadingMode.value = 'pagination';
+    await settle();
+    expect(parent.expanded).toBe(true);
+    expect(leaf.expanded).toBe(true);
+    expect(leaf.items).toHaveLength(10);
+    f.stop();
+  });
+
+  it('switches independent leaf pages to lazy infinite batches and ignores a stale page', async () => {
+    const f = fixture({ defaultGrouping: ['status'], loading: { preloadGroupItems: false, initialGroupItems: 3 } });
+    await f.table.initialize();
+    await f.table.loadMoreGroups();
+    const [first, second] = f.table.groups.value as [
+      NonNullable<(typeof f.table.groups.value)[0]>,
+      NonNullable<(typeof f.table.groups.value)[0]>,
+    ];
+    await f.table.toggleGroup(first.path);
+    await f.table.loadItemsPage(first.path, 2);
+    expect(f.table.getItemPage(first.path)).toEqual({ page: 2, totalItems: 42 });
+    expect(first.items[0]?.id).toBe('010');
+    expect(f.table.getItemPage(second.path).page).toBe(1);
+    expect(second.items).toEqual([]);
+
+    let resolve!: (result: { data: { items: Item[]; meta: { itemCount: number; pageCount: number } } }) => void;
+    f.get.mockImplementationOnce(
+      () =>
+        new Promise((done) => {
+          resolve = done;
+        }),
+    );
+    const pending = f.table.loadItemsPage(first.path, 3);
+    f.table.loadingMode.value = 'infinite';
+    await settle();
+    resolve({ data: { items: data.slice(20, 30), meta: { itemCount: 42, pageCount: 5 } } });
+    await pending;
+    expect(f.table.groups.value[0]).toBe(first);
+    expect(first.expanded).toBe(true);
+    expect(first.items.map(({ id }) => id)).toEqual(['000', '001', '002']);
+    expect(second.items).toEqual([]);
+    await f.table.toggleGroup(second.path);
+    expect(second.items).toHaveLength(3);
+    f.stop();
+  });
+
+  it('paginates an ungrouped root and restarts it as a flat append list', async () => {
+    const f = fixture({ defaultGrouping: [], loading: {} });
+    await f.table.initialize();
+    const state = f.table.getItemPage();
+    await f.table.loadItemsPage([], 2);
+    expect(state).toEqual({ page: 2, totalItems: 84 });
+    expect(f.table.root.items[0]?.id).toBe('010');
+    f.table.loadingMode.value = 'infinite';
+    await settle();
+    expect(state.page).toBe(1);
+    await f.table.loadMoreItems([]);
+    expect(f.table.root.items).toHaveLength(20);
+    f.stop();
+  });
+
   it('loads complete nested counts and leaves lazily, including null and numeric-looking strings', async () => {
     const f = fixture();
     await f.table.initialize();

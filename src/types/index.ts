@@ -2,10 +2,12 @@ export type { ApiVersion, CreateApiClientOptions } from './api';
 export type { UseAutocompleteOptions } from './autocomplete-options';
 export type {
   GroupBranch,
+  GroupItemPage,
   GroupNode,
   GroupPath,
   GroupPathEntry,
   GroupValue,
+  GroupedTableLoadingOptions,
   GroupingField,
   UseGroupedTableOptions,
 } from './grouping';
@@ -23,4 +25,4 @@ export type {
   TableColumn,
   TableColumnInput,
 } from './table';
-export type { UseTableOptions } from './table-options';
+export type { TableLoadingMode, UseTableOptions } from './table-options';

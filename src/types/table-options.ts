@@ -2,6 +2,9 @@ import type { AxiosInstance } from 'axios';
 import type { MaybeRef, Ref } from 'vue';
 import type { RoutePageRef, StorageLike, TableColumnInput } from './table';
 
+/** How a table presents subsequent rows. */
+export type TableLoadingMode = 'pagination' | 'infinite';
+
 /** Configuration for the headless Query Kit table composable. */
 export interface UseTableOptions<
   TItem extends Record<string, unknown>,
@@ -27,6 +30,8 @@ export interface UseTableOptions<
   isArchived?: boolean;
   /** Initial page size when no persisted preference exists; defaults to 25. */
   defaultItemsPerPage?: number;
+  /** Initial row loading mode; defaults to pagination. */
+  initialMode?: TableLoadingMode;
   /** Persistence adapter; `localStorage` is used automatically when available. */
   storage?: StorageLike;
   /** A ref backed by the consumer's URL query parameter; no router is required. */
