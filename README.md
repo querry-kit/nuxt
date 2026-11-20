@@ -144,7 +144,7 @@ toolchain, including Parcel's file watcher.
 
 `pnpm test:coverage` collects all source files, prints the coverage summary, and writes HTML and LCOV reports to `coverage/`. GitHub Actions runs the same command and retains the report as a workflow artifact.
 
-Dependency maintenance updates manifests and the pnpm lockfile within supported version ranges.
+Dependency maintenance updates manifests and the pnpm lockfile within supported version ranges. The development toolchain pins patched transitive versions of glob and minimatch.
 
 TanStack Table is not a peer dependency: the composables use renderer-independent column metadata and sorting state.
 
