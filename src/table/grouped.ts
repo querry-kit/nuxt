@@ -1,4 +1,4 @@
-import { computed, ref, shallowReactive, unref, watch } from 'vue';
+import { computed, getCurrentScope, onScopeDispose, ref, shallowReactive, unref, watch } from 'vue';
 import { useModuleApi } from '../api/module-api';
 
 import type {
@@ -33,6 +33,8 @@ export function useGroupedTable<
   const name = options.persistenceKey ?? options.name;
   if (!name) throw new Error('useGroupedTable requires a persistenceKey or name.');
   const batchSize = options.groupBatchSize ?? 25;
+  const sumFields = options.groupSumFields ?? [];
+  const sumSelector = sumFields.length ? Object.fromEntries(sumFields.map((field) => [field, true])) : undefined;
   if (!Number.isInteger(batchSize) || batchSize < 1 || batchSize > 1000)
     throw new Error('groupBatchSize must be an integer from 1 to 1000.');
   const storage = options.storage ?? browserStorage();
@@ -45,6 +47,10 @@ export function useGroupedTable<
   if (!validGrouping(options.defaultGrouping ?? []))
     throw new Error('defaultGrouping contains unavailable or repeated fields.');
   const grouping = persistedRef<string[]>(key('grouping'), options.defaultGrouping ?? [], storage, validGrouping);
+  const expandedPaths = options.persistExpansion
+    ? persistedRef<string[]>(key('expanded-groups'), [], storage, isStringArray)
+    : undefined;
+  const expandedKeys = computed(() => new Set(expandedPaths?.value));
   const loadingOptions = options.loading;
   const loadingMode = ref<TableLoadingMode>(loadingOptions ? (loadingOptions.initialMode ?? 'pagination') : 'infinite');
   const preloadGroupItems = Boolean(loadingOptions && (loadingOptions.preloadGroupItems ?? true));
@@ -114,6 +120,12 @@ export function useGroupedTable<
     if (!rules.some((rule) => rule.id === identityKey)) rules.push({ id: identityKey, desc: false });
     return sortingToOrderBy(rules);
   });
+  const groupOrder = computed(() =>
+    grouping.value.map(
+      (field) => [field, sorting.value.find(({ id }) => id === field)?.desc ? 'desc' : 'asc'] as const,
+    ),
+  );
+  const groupOrderKey = computed(() => JSON.stringify(groupOrder.value));
   const branch = (): GroupBranch<TItem> => ({
     children: [],
     items: [],
@@ -127,6 +139,8 @@ export function useGroupedTable<
   let epoch = 0;
   let rowEpoch = 0;
   let initialized = false;
+  let bulkExpansion = 0;
+  if (getCurrentScope()) onScopeDispose(() => void bulkExpansion++);
 
   const find = (path: GroupPath): GroupNode<TItem> => {
     let children = root.children;
@@ -168,19 +182,18 @@ export function useGroupedTable<
   };
 
   /**
-   * Starts first-page requests for visible leaves eligible for loading.
+   * Loads visible expanded branches and preloads eligible collapsed leaves.
    * @param {GroupNode<TItem>[]} nodes Visible group headers.
    * @returns {Promise<void>} Completion of the eligible loads.
    */
-  const loadVisibleLeaves = async (nodes: GroupNode<TItem>[]) => {
+  const loadVisibleBranches = async (nodes: GroupNode<TItem>[]) => {
     await Promise.all(
       nodes.map(async (node) => {
-        if (node.path.length === grouping.value.length) {
-          if (!node.loaded && (node.expanded || (loadingMode.value === 'infinite' && preloadGroupItems))) {
-            await load(node.path);
-          }
-        } else if (node.expanded) {
-          await loadVisibleLeaves(node.children);
+        const leaf = node.path.length === grouping.value.length;
+        if (!node.loaded && (node.expanded || (leaf && loadingMode.value === 'infinite' && preloadGroupItems))) {
+          await load(node.path);
+        } else if (!leaf && node.expanded) {
+          await loadVisibleBranches(node.children);
         }
       }),
     );
@@ -213,8 +226,9 @@ export function useGroupedTable<
         const response = await api.groupBy<Record<string, unknown>>({
           by: [field],
           where: JSON.stringify(scopedWhere ?? {}),
-          orderBy: { [field]: 'asc' },
+          orderBy: { [field]: groupOrder.value[path.length]?.[1] ?? 'asc' },
           _count: { _all: true },
+          ...(sumSelector && { _sum: sumSelector }),
           take: batchSize + 1,
           skip: target.children.length,
         });
@@ -235,14 +249,28 @@ export function useGroupedTable<
           )
             throw new Error('Invalid group-by response.');
           const nextPath = [...path, { field, value: value as GroupValue }];
+          const pathKey = JSON.stringify(nextPath);
+          const sums = row._sum as Record<string, unknown> | undefined;
+          const sum = sumSelector
+            ? (Object.fromEntries(
+                sumFields.map((key) => {
+                  const total = sums?.[key];
+                  if (total !== null && (typeof total !== 'number' || !Number.isFinite(total))) {
+                    throw new Error('Invalid group-by sum.');
+                  }
+                  return [key, total];
+                }),
+              ) as GroupNode<TItem>['sum'])
+            : undefined;
           return shallowReactive({
             ...branch(),
-            key: JSON.stringify(nextPath),
+            key: pathKey,
             path: nextPath,
             field,
             value,
             count,
-            expanded: false,
+            ...(sum && { sum }),
+            expanded: expandedKeys.value.has(pathKey),
             loaded: false,
           });
         });
@@ -256,10 +284,7 @@ export function useGroupedTable<
             ? ((offset ? loadingOptions?.groupLoadMoreItems : loadingOptions?.initialGroupItems) ?? itemsPerPage.value)
             : itemsPerPage.value;
         const page = append ? Math.floor(offset / size) + 1 : (requestedPage ?? state.page);
-        if (!append && page !== state.page) {
-          state.page = page;
-          target.items = [];
-        }
+        if (!append) state.requestedPage = page;
         const query = {
           where: JSON.stringify(scopedWhere ?? {}),
           orderBy: leafOrder.value,
@@ -277,6 +302,10 @@ export function useGroupedTable<
           rows.push(...(next.items.slice(0, size - rows.length) as TItem[]));
         }
         state.totalItems = first.meta.itemCount;
+        if (!append) {
+          state.page = page;
+          delete state.requestedPage;
+        }
         target.items = append ? [...target.items, ...rows] : rows;
         target.hasMore =
           rows.length > 0 && (append ? target.items.length < state.totalItems : page < first.meta.pageCount);
@@ -291,7 +320,7 @@ export function useGroupedTable<
       if (current()) target.loading = false;
     }
     if (newNodes.length && version === epoch && (target === root || ('expanded' in target && target.expanded))) {
-      await loadVisibleLeaves(newNodes);
+      await loadVisibleBranches(newNodes);
     }
   };
 
@@ -299,7 +328,9 @@ export function useGroupedTable<
   const refresh = async () => {
     epoch++;
     Object.assign(root, branch());
-    Object.assign(pageFor(root), { page: 1, totalItems: 0 });
+    const state = pageFor(root);
+    Object.assign(state, { page: 1, totalItems: 0 });
+    delete state.requestedPage;
     await load();
   };
   /** Fetches the root and invokes the consumer's initialization callback. */
@@ -316,9 +347,62 @@ export function useGroupedTable<
   const toggleGroup = async (path: GroupPath) => {
     const node = find(path);
     node.expanded = !node.expanded;
+    if (expandedPaths) {
+      const next = new Set(expandedKeys.value);
+      if (node.expanded) next.add(node.key);
+      else next.delete(node.key);
+      expandedPaths.value = [...next];
+    }
     if (!node.expanded) return;
     if (!node.loaded) await load(path);
-    else await loadVisibleLeaves(node.children);
+    else await loadVisibleBranches(node.children);
+  };
+
+  /** Checks that the available groups below a branch are open and no group batch remains. */
+  const areGroupsExpanded = (target: GroupBranch<TItem>, depth: number): boolean => {
+    if (depth === grouping.value.length) return true;
+    return (
+      (!target.hasMore || Boolean(target.error)) &&
+      target.children.every((node) => node.expanded && areGroupsExpanded(node, depth + 1))
+    );
+  };
+  const allGroupsExpanded = computed(() => root.children.length > 0 && areGroupsExpanded(root, 0));
+
+  /** Collapses loaded nodes, including descendants of already collapsed parents. */
+  const collapseGroups = (nodes: GroupNode<TItem>[]): void => {
+    for (const node of nodes) {
+      node.expanded = false;
+      collapseGroups(node.children);
+    }
+  };
+
+  /**
+   * Expands all matching groups, or clears all expansion preferences for this table.
+   * @param {boolean} expanded Whether to expand or collapse the group tree.
+   * @returns {Promise<void>} Completion of the optional group and first-page loads.
+   */
+  const setAllGroupsExpanded = async (expanded: boolean): Promise<void> => {
+    const operation = ++bulkExpansion;
+    if (!grouping.value.length) return;
+    if (!expanded) {
+      collapseGroups(root.children);
+      if (expandedPaths) expandedPaths.value = [];
+      return;
+    }
+
+    const version = epoch;
+    const current = () => operation === bulkExpansion && version === epoch;
+    const expandBranch = async (target: GroupBranch<TItem>, path: GroupPath): Promise<void> => {
+      if (path.length === grouping.value.length) return;
+      while (current() && target.hasMore && !target.loading && !target.error) await load(path);
+      for (const node of target.children) {
+        if (!current()) return;
+        if (!node.expanded) await toggleGroup(node.path);
+        else if (!node.loaded) await load(node.path);
+        if (current() && node.expanded) await expandBranch(node, node.path);
+      }
+    };
+    await expandBranch(root, []);
   };
   /**
    * Appends the next group batch, or retries the previous failed request.
@@ -365,13 +449,23 @@ export function useGroupedTable<
     }
     Object.assign(target, branch());
     if ('loaded' in target) target.loaded = false;
-    Object.assign(pageFor(target), { page: 1, totalItems: 'count' in target ? target.count : 0 });
+    const state = pageFor(target);
+    Object.assign(state, { page: 1, totalItems: 'count' in target ? target.count : 0 });
+    delete state.requestedPage;
   };
 
   watch(
-    [grouping, where, leafOrder, fields, itemsPerPage],
-    () => {
-      if (initialized) void refresh();
+    [groupOrderKey, where, fields, itemsPerPage, leafOrder],
+    async (current, previous) => {
+      if (!initialized) return;
+      if (!grouping.value.length || current.slice(0, 3).some((value, index) => value !== previous[index])) {
+        await refresh();
+        return;
+      }
+      // A leaf sort or page-size change can reload the records without refetching their groups.
+      rowEpoch++;
+      resetRows(root, 0);
+      await loadVisibleBranches(root.children);
     },
     { deep: true },
   );
@@ -380,11 +474,12 @@ export function useGroupedTable<
     rowEpoch++;
     resetRows(root, 0);
     if (!grouping.value.length) await load();
-    else await loadVisibleLeaves(root.children);
+    else await loadVisibleBranches(root.children);
   });
   return {
     root,
     groups: computed(() => root.children),
+    allGroupsExpanded,
     grouping,
     loadingMode,
     sorting,
@@ -398,6 +493,7 @@ export function useGroupedTable<
     initialize,
     refresh,
     toggleGroup,
+    setAllGroupsExpanded,
     loadMoreGroups,
     loadMoreItems,
     getItemPage,

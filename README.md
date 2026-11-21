@@ -203,16 +203,31 @@ await table.loadMoreItems(leaf.path); // records at the final level
 `count`, `expanded`, and `loaded`. Use `node.key` as the renderer key and preserve
 `node.path` as data, rather than building string paths from display labels.
 
+Set `groupSumFields` to request numeric totals with each group batch. For example,
+`groupSumFields: ['estimatedHours']` makes the full group total available as
+`node.sum?.estimatedHours`, even when the group is collapsed.
+
 The composable returns `grouping`, `sorting`, `filtering`, `itemsPerPage`, `columns`,
 `fields`, `columnOrder`, `columnVisibility`, and `columnPinning` using existing table
-preference conventions. Only the grouping selection is persisted; expansion and
-loaded data remain in memory. Empty grouping loads a flat list through
-`loadMoreItems([])`. `refresh()` discards cached groups and resets expansion.
+preference conventions. By default, expansion stays in memory. Set
+`persistExpansion: true` to save expanded group paths under the table's persistence
+key and restore them after a refresh or remount as matching groups load. Nested
+groups reopen only under expanded parents. Loaded data stays in memory. Empty
+grouping loads a flat list through `loadMoreItems([])`. `refresh()` discards cached
+groups and reapplies any saved expansion.
+Use `setAllGroupsExpanded(true)` to discover and open every matching group,
+including nested groups. It loads the first page for each leaf. Call
+`setAllGroupsExpanded(false)` to close the tree and clear the saved expansions
+for the table. `allGroupsExpanded` reflects whether the loaded groups are open
+and no more group batches are available to load.
 Changing filters, grouping, sorting, fields, or page size invalidates pending results.
 Errors remain local to the affected branch; call its load-more action again to retry.
+Changing a leaf page keeps the committed rows and page number visible until the
+request succeeds. `getItemPage(path).requestedPage` identifies a pending or failed
+request, so the consumer can retry that page.
 Callbacks `onInitialized`, `onRefreshed` (the branch's accumulated records), and
 `onError` are optional. A unique `identityKey` defaults to `id` and provides a stable
-record-sort tie-breaker. Group keys sort ascending; grouping fields can be reordered.
+record-sort tie-breaker. Group keys default to ascending and follow the active sort direction when the same field is sorted. Sorting other fields reloads leaf records while preserving expanded groups.
 
 Pass `loading: {}` to opt in to switchable row loading. Use
 `loading: { initialMode: 'infinite', initialGroupItems: 5, groupLoadMoreItems: 10 }`

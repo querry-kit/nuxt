@@ -4,12 +4,13 @@ import { effectScope, nextTick, ref } from 'vue';
 import type { GroupPath, UseGroupedTableOptions } from '../types/grouping';
 import { useGroupedTable } from './grouped';
 
-type Item = { id: string; status: string | null; category: string; active: boolean };
+type Item = { id: string; status: string | null; category: string; active: boolean; hours: number };
 const data: Item[] = Array.from({ length: 84 }, (_, i) => ({
   id: String(i).padStart(3, '0'),
   status: i < 42 ? '001' : null,
   category: i % 2 ? 'a' : 'b',
   active: true,
+  hours: 2,
 }));
 const matches = (item: Item, where: Record<string, unknown>): boolean =>
   Object.entries(where).every(([field, value]) => {
@@ -21,7 +22,7 @@ const matches = (item: Item, where: Record<string, unknown>): boolean =>
   });
 function fixture(overrides: Partial<UseGroupedTableOptions<Item>> = {}) {
   const requests: Record<string, unknown>[] = [];
-  const get = jest.fn(async (url: string) => {
+  const get = jest.fn(async (url: string): Promise<{ data: unknown }> => {
     const query = qs.parse(url.split('?')[1] ?? '');
     requests.push(query);
     const filtered = data.filter((item) => matches(item, JSON.parse(query.where as string)));
@@ -68,6 +69,140 @@ const settle = async () => {
 };
 
 describe('useGroupedTable', () => {
+  it('keeps committed leaf rows and sibling pages while a page is pending or fails', async () => {
+    const f = fixture({ defaultGrouping: ['status'], loading: { initialMode: 'pagination' } });
+    await f.table.initialize();
+    await f.table.loadMoreGroups();
+    const [first, second] = f.table.groups.value;
+    await f.table.toggleGroup(first!.path);
+    await f.table.toggleGroup(second!.path);
+    const firstRows = first!.items;
+    const siblingRows = second!.items;
+    let reject!: (error: Error) => void;
+    f.get.mockImplementationOnce(
+      () =>
+        new Promise((_, fail) => {
+          reject = fail;
+        }),
+    );
+
+    const previousRequests = f.get.mock.calls.length;
+    const pending = f.table.loadItemsPage(first!.path, 2);
+    expect(f.table.getItemPage(first!.path)).toEqual({ page: 1, totalItems: 42, requestedPage: 2 });
+    expect(first!.items).toBe(firstRows);
+    expect(second!.items).toBe(siblingRows);
+    reject(new Error('Page failed'));
+    await pending;
+    expect(first!.items).toBe(firstRows);
+    expect(f.table.getItemPage(first!.path).requestedPage).toBe(2);
+
+    await f.table.loadItemsPage(first!.path, 2);
+    expect(f.table.getItemPage(first!.path)).toEqual({ page: 2, totalItems: 42 });
+    expect(first!.items[0]?.id).toBe('010');
+    expect(second!.items).toBe(siblingRows);
+    expect(f.get.mock.calls).toHaveLength(previousRequests + 2);
+    f.stop();
+  });
+
+  it('expands every group batch and nested leaf, then clears saved expansion without requests', async () => {
+    const setItem = jest.fn();
+    const f = fixture({ persistExpansion: true, storage: { getItem: () => null, setItem } });
+    await f.table.initialize();
+    expect(f.table.groups.value).toHaveLength(1);
+    expect(f.table.allGroupsExpanded.value).toBe(false);
+    const first = f.table.groups.value[0]!;
+    f.get.mockRejectedValueOnce(new Error('Group request failed'));
+    await f.table.toggleGroup(first.path);
+    expect(first.error).toEqual(new Error('Group request failed'));
+
+    await f.table.setAllGroupsExpanded(true);
+    const groups = f.table.groups.value;
+    expect(groups).toHaveLength(2);
+    expect(groups.map((parent) => parent.children.length)).toEqual([2, 2]);
+    expect(groups.flatMap((parent) => parent.children.map((leaf) => leaf.items.length))).toEqual([10, 10, 10, 10]);
+    expect(f.table.allGroupsExpanded.value).toBe(true);
+
+    const requests = f.get.mock.calls.length;
+    await f.table.setAllGroupsExpanded(false);
+    expect(f.table.allGroupsExpanded.value).toBe(false);
+    expect(groups.flatMap((node) => [node, ...node.children]).every((node) => !node.expanded)).toBe(true);
+    expect(f.get).toHaveBeenCalledTimes(requests);
+    expect(setItem).toHaveBeenLastCalledWith('table:groups:expanded-groups', '[]');
+    f.stop();
+  });
+
+  it('restores nested expansion after refresh and remount without reopening a collapsed parent', async () => {
+    const saved = new Map<string, string>();
+    const storage = {
+      getItem: (key: string) => saved.get(key) ?? null,
+      setItem: (key: string, value: string) => saved.set(key, value),
+    };
+    const first = fixture({ storage, persistExpansion: true });
+    await first.table.initialize();
+    const parent = first.table.groups.value[0]!;
+    await first.table.toggleGroup(parent.path);
+    const child = parent.children[0]!;
+    await first.table.toggleGroup(child.path);
+    await first.table.refresh();
+    const restored = first.table.groups.value[0]!;
+    expect(restored.expanded).toBe(true);
+    expect(restored.children[0]?.expanded).toBe(true);
+    expect(restored.children[0]?.items).toHaveLength(10);
+    await first.table.toggleGroup(parent.path);
+    first.stop();
+
+    const second = fixture({ storage, persistExpansion: true });
+    await second.table.initialize();
+    expect(second.table.groups.value[0]?.expanded).toBe(false);
+    expect(second.get).toHaveBeenCalledTimes(1);
+    await second.table.toggleGroup(parent.path);
+    expect(second.table.groups.value[0]?.children[0]?.expanded).toBe(true);
+    await second.table.toggleGroup(child.path);
+    await second.table.refresh();
+    expect(second.table.groups.value[0]?.children[0]?.expanded).toBe(false);
+    second.stop();
+  });
+
+  it('applies group-key ordering and retains expanded groups when only leaf ordering changes', async () => {
+    const f = fixture({ defaultGrouping: ['status'] });
+    await f.table.initialize();
+    const path = f.table.groups.value[0]!.path;
+    await f.table.toggleGroup(path);
+    const previousRequests = f.requests.length;
+
+    f.table.sorting.value = [{ id: 'hours', desc: true }];
+    await settle();
+    expect(f.table.groups.value[0]?.expanded).toBe(true);
+    expect(f.requests.slice(previousRequests).map(({ orderBy }) => orderBy)).toEqual([
+      [{ hours: 'desc' }, { id: 'asc' }],
+    ]);
+
+    f.table.sorting.value = [{ id: 'status', desc: true }];
+    await settle();
+    expect(f.requests.at(-1)?.orderBy).toEqual({ status: 'desc' });
+    f.stop();
+  });
+
+  it('requests group totals and validates them before publishing group nodes', async () => {
+    const f = fixture({ groupSumFields: ['hours'] });
+    f.get.mockResolvedValueOnce({ data: [{ status: '001', _count: { _all: 42 }, _sum: { hours: 84 } }] });
+    await f.table.initialize();
+    const query = qs.parse(f.get.mock.calls[0]?.[0].split('?')[1] ?? '');
+    expect(query._sum).toEqual({ hours: 'true' });
+    expect(f.table.groups.value[0]?.sum).toEqual({ hours: 84 });
+    expect(f.table.groups.value[0]?.items).toEqual([]);
+
+    f.get.mockResolvedValueOnce({ data: [{ status: null, _count: { _all: 42 }, _sum: { hours: null } }] });
+    await f.table.refresh();
+    expect(f.table.groups.value[0]?.sum).toEqual({ hours: null });
+
+    f.get.mockResolvedValueOnce({ data: [{ status: '001', _count: { _all: 42 } }] });
+    await f.table.refresh();
+    expect(f.table.root.error).toEqual(new Error('Invalid group-by sum.'));
+    expect(f.table.groups.value).toEqual([]);
+    f.stop();
+  });
+
   it('preloads displayed nested leaves and atomically appends unequal batches through the final row', async () => {
     const f = fixture({ loading: { initialMode: 'infinite', initialGroupItems: 3, groupLoadMoreItems: 5 } });
     expect(() => fixture({ loading: { initialGroupItems: 0 } })).toThrow('initialGroupItems');
