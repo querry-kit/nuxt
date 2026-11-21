@@ -31,6 +31,8 @@ export interface GroupNode<TItem> extends GroupBranch<TItem> {
   field: string;
   value: GroupValue;
   count: number;
+  /** Requested sums over all matching records in this group, independent of its loaded rows. */
+  sum?: Partial<Record<Extract<keyof TItem, string>, number | null>>;
   expanded: boolean;
   loaded: boolean;
 }
@@ -39,6 +41,8 @@ export interface GroupNode<TItem> extends GroupBranch<TItem> {
 export interface GroupItemPage {
   page: number;
   totalItems: number;
+  /** Pending or failed page request. The committed page stays visible until it succeeds. */
+  requestedPage?: number;
 }
 
 /** Enables the grouped table's switchable row loading. */
@@ -62,8 +66,12 @@ export interface UseGroupedTableOptions<
   groupableFields: readonly GroupingField[];
   /** Initial ordered grouping when no valid saved preference exists. */
   defaultGrouping?: string[];
+  /** Restores expanded group paths from the table's preference storage. Defaults to false. */
+  persistExpansion?: boolean;
   /** Groups fetched per branch request; defaults to 25. */
   groupBatchSize?: number;
+  /** Numeric fields to request in `_sum` with every group batch. */
+  groupSumFields?: readonly Extract<keyof TItem, string>[];
   /** Enables pagination and configurable infinite loading while preserving existing defaults when omitted. */
   loading?: GroupedTableLoadingOptions;
 }

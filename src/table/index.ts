@@ -13,6 +13,7 @@ import { persistedRef } from './persisted-ref';
 import { isFilteringState, isPinningState, isSortingState, isStringArray } from './preference-validation';
 
 export { useGroupedTable } from './grouped';
+export { useGroupedSelection } from './grouped-selection';
 
 const DEFAULT_ITEMS_PER_PAGE = 25;
 
