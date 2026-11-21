@@ -1,5 +1,11 @@
 # @querry-kit/nuxt
 
+## 1.1.1
+
+### Patch Changes
+
+- 26aebb5: Refresh and verify compatible development dependencies.
+
 ## 1.1.0
 
 ### Minor Changes
