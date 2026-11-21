@@ -1,5 +1,21 @@
 # @querry-kit/nuxt
 
+## 1.1.0
+
+### Minor Changes
+
+- e7ee861: Add grouped selection across unloaded pages with group and row overrides.
+- 19c656e: Add controls for expanding or collapsing an entire grouped table, including nested groups.
+- 19c656e: Add an opt-in to persist open group paths across grouped table refreshes and remounts.
+- 19c656e: Allow grouped tables to request numeric sums with each group batch and expose them on group nodes.
+- 8de1b5e: Add switchable pagination and infinite loading for flat tables, with independent leaf pagination and configurable batch loading for grouped tables.
+
+### Patch Changes
+
+- 19c656e: Respect a grouped field's sort direction in group queries and keep groups expanded when sorting only their records.
+- 19c656e: Keep the committed page visible while grouped table records are loading and expose the requested page for retries.
+- 5fac61a: Use patched transitive versions of minimatch in the development toolchain.
+
 ## 1.0.0
 
 ### Major Changes
