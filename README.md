@@ -252,3 +252,17 @@ use the same static/tenant/access constraints for counts and records, allowlist 
 fields, enable `preserveJsonWhereTypes` on the service and, when used, on `QueryTransformPipe`. Client filtering is not authorization. Null keys remain real group values;
 relations, date intervals, and snapshot-consistent pagination are outside this API.
 After data mutations, call `refresh()` to reload counts and membership.
+
+### Select entire groups
+
+`useGroupedSelection(getId)` tracks selections across pages with `GroupNode.count` and ordered group paths. Use
+`selectGroup` and `selectItems` to include or exclude groups and records. Bind checkboxes to `groupState` and
+`isSelected`. Call `getSelection()` to read the explicit rules and use `selectedCount` for the current total.
+Clear the selection when the dataset or grouping changes. The application validates its bulk-operation request
+and the server applies its own access rules.
+
+```ts
+import { useGroupedSelection } from '@querry-kit/nuxt';
+
+const selection = useGroupedSelection<{ id: string; status: string }>((item) => item.id);
+```
