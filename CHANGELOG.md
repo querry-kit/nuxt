@@ -1,5 +1,11 @@
 # @querry-kit/nuxt
 
+## 1.1.2
+
+### Patch Changes
+
+- 156b0bc: Refresh the development lockfile for Vue 3.5.46 and vue-eslint-parser 10.4.2.
+
 ## 1.1.1
 
 ### Patch Changes
