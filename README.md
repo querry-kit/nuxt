@@ -156,7 +156,7 @@ Use Node.js 26.13.0 LTS and the package manager pinned in `package.json`. This r
 
 ### Dependency maintenance
 
-Development and type checks use Vue 3.5.45 and the exact `vue-tsc` 3.3.14 pin. VueUse 14 and 15 remain supported; consumer peer ranges are unchanged.
+Development and type checks use Vue 3.5.46 and the exact `vue-tsc` 3.3.14 pin. VueUse 14 and 15 remain supported; consumer peer ranges are unchanged.
 
 Dependency refreshes retain pnpm 11.28.9, the existing TypeScript 6/7 split, and security overrides. Candidates published less than 24 hours ago are deferred; dependency major migrations are outside this update.
 
